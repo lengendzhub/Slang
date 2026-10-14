@@ -59,28 +59,31 @@ def health_check():
         "fact_validator": "active"
     }
 
-# 1. POST /resumes
+from app.core.pdf_extractor import PDFResumeExtractor
+
+# 1. POST /resumes (Supports both PDF and LaTeX .tex files)
 @app.post("/resumes", response_model=ParsedResume)
 async def upload_resume(
     file: Optional[UploadFile] = File(None),
     raw_latex: Optional[str] = Form(None)
 ):
-    content = ""
     if file:
         file_bytes = await file.read()
-        content = file_bytes.decode("utf-8", errors="ignore")
+        filename = (file.filename or "").lower()
+        if filename.endswith(".pdf") or file_bytes.startswith(b"%PDF"):
+            # Direct PDF Upload Extraction
+            extractor = PDFResumeExtractor(file_bytes)
+            parsed = extractor.extract()
+        else:
+            # LaTeX .tex File Upload
+            content = file_bytes.decode("utf-8", errors="ignore")
+            parser = ResumeParser(content)
+            parsed = parser.parse()
     elif raw_latex:
-        content = raw_latex
+        parser = ResumeParser(raw_latex)
+        parsed = parser.parse()
     else:
-        raise HTTPException(status_code=400, detail="Either file or raw_latex is required.")
-
-    parser = ResumeParser(content)
-    parsed = parser.parse()
-
-    # Verify round-trip test
-    if not ResumeParser.verify_round_trip(content, parsed):
-        # Round trip warning
-        pass
+        raise HTTPException(status_code=400, detail="Either a .pdf file, .tex file, or raw_latex text is required.")
 
     db_resumes[parsed.id] = parsed
     db_evidence[parsed.id] = parsed.evidence_bank
@@ -234,44 +237,15 @@ async def update_evidence(evidence_id: str, verified: bool = Form(...), notes: O
                 return {"status": "updated", "evidence": ev}
     raise HTTPException(status_code=404, detail="Evidence record not found.")
 
-# 9. GET /siblings
+# 9. GET and POST /siblings
 @app.get("/siblings", response_model=List[SiblingResume])
 async def list_siblings():
-    return [
-        SiblingResume(
-            id="sib_1",
-            master_id="master_2026",
-            title="Staff Infrastructure Engineer",
-            target_role="Staff Systems Engineer",
-            created_at="Oct 12, 2026",
-            fit_score=94,
-            master_updated=True,
-            approved_changes_count=3,
-            total_changes_count=3
-        ),
-        SiblingResume(
-            id="sib_2",
-            master_id="master_2026",
-            title="Technical Product Manager",
-            target_role="Platform PM",
-            created_at="Oct 10, 2026",
-            fit_score=88,
-            master_updated=True,
-            approved_changes_count=5,
-            total_changes_count=5
-        ),
-        SiblingResume(
-            id="sib_3",
-            master_id="master_2026",
-            title="Senior Distributed Systems Lead",
-            target_role="Distributed Systems Lead",
-            created_at="Oct 04, 2026",
-            fit_score=91,
-            master_updated=False,
-            approved_changes_count=4,
-            total_changes_count=4
-        )
-    ]
+    return list(db_siblings.values())
+
+@app.post("/siblings", response_model=SiblingResume)
+async def create_sibling(sibling: SiblingResume):
+    db_siblings[sibling.id] = sibling
+    return sibling
 
 # 10. DELETE /me/data (Privacy purge)
 @app.delete("/me/data")
