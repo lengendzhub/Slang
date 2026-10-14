@@ -104,16 +104,20 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
   const escName = safeEscapeLatex(candidateName || "Candidate");
   const escEmail = safeEscapeLatex(candidateEmail || "candidate@example.com");
 
-  return `\\documentclass[letterpaper,11pt]{article}
-\\usepackage{latexsym,fullpage,titlesec,hyperref,enumitem}
-\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-2pt}}}}
+  return `\\documentclass[letterpaper,10pt]{article}
+\\usepackage[margin=0.45in]{geometry}
+\\usepackage{latexsym,titlesec,hyperref,enumitem}
+\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large}{}{0em}{}[\\titlerule \\vspace{-4pt}]
+\\titlespacing{\\section}{0pt}{4pt}{2pt}
+\\setlist[itemize]{noitemsep, topsep=1pt, parsep=0pt, partopsep=0pt, leftmargin=0.15in}
+\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-1pt}}}}
 \\begin{document}
 \\begin{center}
-    \\textbf{\\Huge \\scshape ${escName}} \\\\
+    \\textbf{\\Huge \\scshape ${escName}} \\\\ \\vspace{2pt}
     \\small ${escEmail}
 \\end{center}
 \\section{Experience}
-\\begin{itemize}[leftmargin=*]
+\\begin{itemize}[leftmargin=0.15in]
 ${items}
 \\end{itemize}
 \\end{document}`;
@@ -131,13 +135,14 @@ export function Step3Export({
   const [showInterviewPrep, setShowInterviewPrep] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pageCount, setPageCount] = useState<number>(1);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [compileError, setCompileError] = useState<string | null>(null);
 
   const tailoredTex = buildTailoredTex(rawLatex, reviewedChanges, candidateName, candidateEmail);
   const safeFilename = `${candidateName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_tailored_resume`;
 
-  // Fetch real compiled PDF from backend on mount
+  // Fetch real compiled PDF from backend on mount (enforce: false for preview)
   useEffect(() => {
     let active = true;
     let createdUrl: string | null = null;
@@ -146,10 +151,11 @@ export function Step3Export({
       setPdfLoading(true);
       setCompileError(null);
       try {
-        const url = await fetchResumePdfBlobUrl(tailoredTex);
+        const { url, pageCount: pages } = await fetchResumePdfBlobUrl(tailoredTex);
         if (active) {
           createdUrl = url;
           setPdfBlobUrl(url);
+          setPageCount(pages);
         }
       } catch (err: any) {
         if (active) {
@@ -211,6 +217,18 @@ export function Step3Export({
         </p>
       </div>
 
+      {pageCount > 1 && (
+        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 flex items-start gap-3 text-[13px] text-amber-800 dark:text-amber-200">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="space-y-0.5">
+            <p className="font-semibold">Compiles to {pageCount} pages, trim before download</p>
+            <p className="text-[12px] opacity-90">
+              The single-page budget is enforced on final download. Review the live preview below or trim excess bullets in Step 2 to keep your resume to 1 page.
+            </p>
+          </div>
+        </div>
+      )}
+
       {compileError && (
         <div className="p-4 rounded-xl bg-status-missing-bg border border-status-missing-text/30 flex items-start gap-3 text-[13px] text-status-missing-text">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -230,8 +248,12 @@ export function Step3Export({
               <h3 className="font-semibold text-[17px] text-ink">{candidateName}</h3>
               <p className="text-[12px] text-ink-muted">{candidateEmail} • Tailored LaTeX PDF</p>
             </div>
-            <span className="font-mono text-[11px] text-status-supported-text bg-status-supported-bg px-2.5 py-1 rounded-pill font-medium">
-              1 Page • 100% Fit
+            <span className={`font-mono text-[11px] px-2.5 py-1 rounded-pill font-medium ${
+              pageCount > 1
+                ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50"
+                : "text-status-supported-text bg-status-supported-bg"
+            }`}>
+              {pageCount === 1 ? "1 Page • 100% Fit" : `${pageCount} Pages • Trim to 1 Page`}
             </span>
           </div>
 

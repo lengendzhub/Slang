@@ -102,55 +102,91 @@ class PDFResumeExtractor:
 
             def flush_bullets():
                 if current_bullet_items:
-                    sec_latex_blocks.append("  \\begin{itemize}[leftmargin=*]\n" + "\n".join(current_bullet_items) + "\n  \\end{itemize}")
+                    sec_latex_blocks.append("  \\begin{itemize}[leftmargin=0.15in]\n" + "\n".join(current_bullet_items) + "\n  \\end{itemize}")
                     current_bullet_items.clear()
 
-            b_idx = 0
-            for line in sec_lines:
-                # Check if line is a job/degree subheading (contains date ranges or role/company format without bullet symbol)
-                has_bullet_marker = line.startswith(('-', '•', '*', '–', '·', '>', '—'))
-                has_date_range = bool(re.search(r'\b(19\d\d|20\d\d)\s*[-–—]\s*(Present|current|now|\d{4})\b', line, re.IGNORECASE))
-                
-                clean_line = re.sub(r'^[-•*–·>—\d\.]+\s*', '', line).strip()
-                if not clean_line:
-                    continue
+            # Group continuation lines to avoid fragmentation
+            raw_items = []
+            curr_text = ""
+            curr_is_heading = False
+            curr_is_bullet = False
 
-                if has_date_range and not has_bullet_marker:
-                    # Structural subheading: flush any pending itemize list first
+            for line in sec_lines:
+                clean = line.strip()
+                if not clean:
+                    continue
+                is_bullet = clean.startswith(('-', '•', '*', '–', '·', '>', '—'))
+                has_date = bool(re.search(r'\b(19\d\d|20\d\d)\s*[-–—]\s*(Present|current|now|\d{4})\b', clean, re.IGNORECASE))
+                clean_text = re.sub(r'^[-•*–·>—\d\.]+\s*', '', clean).strip()
+
+                if is_bullet or has_date:
+                    if curr_text:
+                        raw_items.append((curr_text, curr_is_heading, curr_is_bullet))
+                    curr_text = clean_text
+                    curr_is_heading = has_date and not is_bullet
+                    curr_is_bullet = is_bullet
+                else:
+                    if curr_text and not curr_text.endswith(('.', ':', ';')) and len(clean_text) > 0:
+                        curr_text += " " + clean_text
+                    else:
+                        if curr_text:
+                            raw_items.append((curr_text, curr_is_heading, curr_is_bullet))
+                        curr_text = clean_text
+                        curr_is_heading = False
+                        curr_is_bullet = False
+
+            if curr_text:
+                raw_items.append((curr_text, curr_is_heading, curr_is_bullet))
+
+            b_idx = 0
+            is_summary_sec = "summary" in sec_title.lower() or "objective" in sec_title.lower()
+
+            for item_text, is_heading, is_bullet in raw_items:
+                if is_heading:
                     flush_bullets()
-                    escaped_subheading = _escape_latex(clean_line)
-                    sec_latex_blocks.append(f"  \\vspace{{3pt}}\\textbf{{{escaped_subheading}}}\\par")
+                    escaped_subheading = _escape_latex(item_text)
+                    sec_latex_blocks.append(f"  \\vspace{{2pt}}\\textbf{{{escaped_subheading}}}\\par")
                     evidence_bank.append(EvidenceRecord(
                         id=f"ev_{sec_id}_hdr_{b_idx}",
                         source="uploaded_pdf",
-                        raw_text=clean_line,
+                        raw_text=item_text,
                         context=f"Role/Institution in {sec_title}",
                         verified=True
                     ))
                     b_idx += 1
-                    continue
+                elif is_summary_sec and not is_bullet:
+                    flush_bullets()
+                    escaped_summary = _escape_latex(item_text)
+                    sec_latex_blocks.append(f"  \\small{{{escaped_summary}}}\\par\\vspace{{2pt}}")
+                    evidence_bank.append(EvidenceRecord(
+                        id=f"ev_{sec_id}_{b_idx}",
+                        source="uploaded_pdf",
+                        raw_text=item_text,
+                        context=f"Section: {sec_title}",
+                        verified=True
+                    ))
+                    b_idx += 1
+                else:
+                    ev_id = f"ev_{sec_id}_{b_idx}"
+                    bullet_item = ResumeBullet(
+                        id=f"{sec_id}_b{b_idx}",
+                        text=item_text,
+                        raw_slot=f"\\resumeItem{{{item_text}}}",
+                        evidence_id=ev_id,
+                        max_length_budget=int(len(item_text) * 1.05)
+                    )
+                    bullets.append(bullet_item)
 
-                # Detect if line is an achievement bullet or skill item
-                ev_id = f"ev_{sec_id}_{b_idx}"
-                bullet_item = ResumeBullet(
-                    id=f"{sec_id}_b{b_idx}",
-                    text=clean_line,
-                    raw_slot=f"\\resumeItem{{{clean_line}}}",
-                    evidence_id=ev_id,
-                    max_length_budget=int(len(clean_line) * 1.05)
-                )
-                bullets.append(bullet_item)
-
-                evidence_bank.append(EvidenceRecord(
-                    id=ev_id,
-                    source="uploaded_pdf",
-                    raw_text=clean_line,
-                    context=f"Section: {sec_title}",
-                    verified=True
-                ))
-                escaped_bullet = _escape_latex(clean_line)
-                current_bullet_items.append(f"    \\resumeItem{{{escaped_bullet}}}")
-                b_idx += 1
+                    evidence_bank.append(EvidenceRecord(
+                        id=ev_id,
+                        source="uploaded_pdf",
+                        raw_text=item_text,
+                        context=f"Section: {sec_title}",
+                        verified=True
+                    ))
+                    escaped_bullet = _escape_latex(item_text)
+                    current_bullet_items.append(f"    \\resumeItem{{{escaped_bullet}}}")
+                    b_idx += 1
 
             flush_bullets()
 
@@ -165,18 +201,22 @@ class PDFResumeExtractor:
             if sec_latex_blocks:
                 latex_body_parts.append(f"\\section{{{_escape_latex(sec_title)}}}\n" + "\n".join(sec_latex_blocks))
 
-        # 4. Generate clean compiling LaTeX template from extracted PDF content
+        # 4. Generate clean compiling LaTeX template with compact single-page budget
         esc_name = _escape_latex(contact_name)
         esc_email = _escape_latex(contact_email or '')
         esc_phone = _escape_latex(contact_phone or '')
 
         compiled_latex = (
-            "\\documentclass[letterpaper,11pt]{article}\n"
-            "\\usepackage{latexsym,fullpage,titlesec,hyperref,enumitem}\n"
-            "\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-2pt}}}}\n"
+            "\\documentclass[letterpaper,10pt]{article}\n"
+            "\\usepackage[margin=0.45in]{geometry}\n"
+            "\\usepackage{latexsym,titlesec,hyperref,enumitem}\n"
+            "\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large}{}{0em}{}[\\titlerule \\vspace{-4pt}]\n"
+            "\\titlespacing{\\section}{0pt}{4pt}{2pt}\n"
+            "\\setlist[itemize]{noitemsep, topsep=1pt, parsep=0pt, partopsep=0pt, leftmargin=0.15in}\n"
+            "\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-1pt}}}}\n"
             "\\begin{document}\n\n"
             "\\begin{center}\n"
-            f"    \\textbf{{\\Huge \\scshape {esc_name}}} \\\\\n"
+            f"    \\textbf{{\\Huge \\scshape {esc_name}}} \\\\ \\vspace{{2pt}}\n"
             f"    \\small {esc_email} $|$ {esc_phone}\n"
             "\\end{center}\n\n"
             + "\n\n".join(latex_body_parts) +

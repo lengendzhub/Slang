@@ -9,7 +9,6 @@ import asyncio
 import re
 import subprocess
 import tempfile
-import os
 import shutil
 from pathlib import Path
 
@@ -32,10 +31,17 @@ class ExportRequest(BaseModel):
     tex: str
     filename: str = "tailored_resume"
     max_pages: int = 1
+    enforce: bool = True  # False for previews: return the PDF and report pages in X-Page-Count
 
 
-def _fail(status: int, code: str, message: str, log: str = ""):
-    raise HTTPException(status, {"error": code, "message": message, "log": log})
+def _fail(status: int, code: str, message: str, log: str = "", pages=None):
+    raise HTTPException(
+        status, {"error": code, "message": message, "log": log, "pages": pages or []}
+    )
+
+
+def _preview(text: str, n: int = 110) -> str:
+    return " ".join(text.split())[:n]
 
 
 @router.post("/exports/pdf")
@@ -69,21 +75,22 @@ async def export_pdf(req: ExportRequest):
 
         pdf_path = Path(tmp) / "resume.pdf"
         if run.returncode != 0 or not pdf_path.exists():
-            print("\n" + "="*50)
-            print("TECTONIC COMPILE FAILED! Return code:", run.returncode)
-            print("STDERR:\n", run.stderr)
-            print("STDOUT:\n", run.stdout)
-            print("CLEAN TEX:\n", clean_tex)
-            print("="*50 + "\n")
             _fail(422, "latex_compile_failed", f"LaTeX did not compile: {run.stderr[-400:]}", run.stderr[-2000:])
         data = pdf_path.read_bytes()
 
     with fitz.open(stream=data, filetype="pdf") as doc:
         pages = doc.page_count
-        text = "".join(page.get_text() for page in doc)
+        page_texts = [page.get_text() for page in doc]
+    text = "".join(page_texts)
+    previews = [f"p{i + 1}: {_preview(t)}" for i, t in enumerate(page_texts)]
 
-    if pages > req.max_pages:
-        _fail(422, "too_many_pages", f"Resume is {pages} pages; the limit is {req.max_pages}.")
+    if pages > req.max_pages and req.enforce:
+        _fail(
+            422,
+            "too_many_pages",
+            f"Resume is {pages} pages; the limit is {req.max_pages}. " + " | ".join(previews),
+            pages=previews,
+        )
     if len(text.strip()) < 30:
         _fail(422, "empty_pdf", "The PDF has almost no extractable text.")
 
@@ -91,5 +98,9 @@ async def export_pdf(req: ExportRequest):
     return Response(
         content=data,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{safe}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe}.pdf"',
+            "X-Page-Count": str(pages),
+            "Access-Control-Expose-Headers": "X-Page-Count",
+        },
     )
