@@ -1,0 +1,179 @@
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Alex Morgan} \\ \vspace{1pt}
+    \small 415-555-0198 $|$ \href{mailto:alex.morgan@email.com}{\underline{alex.morgan@email.com}} $|$ 
+    \href{https://linkedin.com/in/alexmorgan}{\underline{linkedin.com/in/alexmorgan}} $|$
+    \href{https://github.com/alexmorgan}{\underline{github.com/alexmorgan}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {University of California, Berkeley}{Berkeley, CA}
+      {Bachelor of Science in Computer Science}{Aug. 2018 -- May 2022}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Senior Software Engineer}{June 2022 -- Present}
+      {Nexus Cloud Systems}{San Francisco, CA}
+      \resumeItemListStart
+        \resumeItem{Architected distributed caching layer with Redis, reducing p99 API query latency by 42\% across 10M daily requests.}
+        \resumeItem{Spearheaded migration of core billing microservices to Go and PostgreSQL, improving transaction throughput by 3.5x.}
+        \resumeItem{Mentored 4 junior engineers on distributed consensus, design patterns, and automated testing practices.}
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Software Engineering Intern}{May 2021 -- Aug. 2021}
+      {DataVibe Analytics}{San Jose, CA}
+      \resumeItemListStart
+        \resumeItem{Developed automated data ingestion pipelines in Python processing 500GB daily log streams into Snowflake.}
+        \resumeItem{Implemented real-time dashboard alerts using FastAPI and WebSockets, cutting incident detection time by 35\%.}
+        \resumeItem{Collaborated with data science teams to optimize SQL queries, decreasing ETL pipeline execution cost by 20\%.}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+      \resumeProjectHeading
+          {\textbf{HyperKV Storage Engine} $|$ \emph{Rust, RocksDB, gRPC, Raft}}{Jan. 2023 -- Present}
+          \resumeItemListStart
+            \resumeItem{Built a high-throughput, distributed key-value store implementing the Raft consensus algorithm in Rust.}
+            \resumeItem{Benchmarked against Etcd and achieved 85,000 writes/sec with strict linearizable consistency guarantees.}
+          \resumeItemListEnd
+      \resumeProjectHeading
+          {\textbf{QueryLens SQL Optimizer} $|$ \emph{Python, AST, PostgreSQL, FastAPI}}{Sept. 2022 -- Dec. 2022}
+          \resumeItemListStart
+            \resumeItem{Constructed an AST-based query analyzer suggesting index additions and eliminating N+1 execution bottlenecks.}
+            \resumeItem{Adopted by 1,200+ GitHub developers with a 4.9-star rating across developer communities.}
+          \resumeItemListEnd
+    \resumeSubHeadingListEnd
+
+
+%-----------TECHNICAL SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Languages}{: Python, Go, Rust, TypeScript, JavaScript, SQL, C++, HTML/CSS} \\
+     \textbf{Frameworks \& Libraries}{: FastAPI, React, Next.js, Node.js, Gin, gRPC} \\
+     \textbf{Cloud \& DevOps}{: Docker, Kubernetes, AWS (EC2, S3, RDS), GitHub Actions, Terraform, Linux} \\
+     \textbf{Databases \& Systems}{: PostgreSQL, Redis, Snowflake, RocksDB, Kafka, ElasticSearch}
+    }}
+ \end{itemize}
+
+%-------------------------------------------
+\end{document}

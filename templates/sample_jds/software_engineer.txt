@@ -1,0 +1,26 @@
+Role: Staff / Senior Distributed Systems Engineer
+Company: CloudScale Infrastructure
+Location: Remote / San Francisco, CA
+
+About the Role:
+We are seeking an experienced Backend Engineer to lead our low-latency distributed storage and streaming infrastructure. You will design, scale, and maintain mission-critical data pipelines and caching services handling billions of daily events.
+
+Key Responsibilities:
+- Architect high-throughput distributed systems and caching layers with microsecond latencies.
+- Lead microservice migrations and refactoring to modern languages (Go, Rust, or modern C++).
+- Mentor junior and mid-level software engineers across engineering squads.
+- Drive reliability, zero-downtime deployments, and end-to-end distributed tracing.
+
+Mandatory / Essential Requirements:
+- 4+ years of professional backend software development experience.
+- Deep expertise in distributed caching (Redis, Memcached) and relational databases (PostgreSQL).
+- Demonstrated experience writing concurrent, memory-safe backend services in Go, Rust, or Python.
+- Proven track record mentoring engineers and conducting architectural design reviews.
+
+Required Qualifications:
+- Experience with containerization (Docker, Kubernetes) and CI/CD automation.
+- Solid understanding of distributed consensus protocols (Raft, Paxos) is strongly preferred.
+
+Preferred / Nice to Have:
+- Hands-on experience with Kafka or event-driven architectures.
+- Bachelor's degree in Computer Science or related quantitative field.
