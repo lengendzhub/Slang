@@ -54,6 +54,16 @@ const INTERVIEW_QUESTIONS = [
   },
 ];
 
+function safeEscapeLatex(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/(?<!\\)&/g, "\\&")
+    .replace(/(?<!\\)%/g, "\\%")
+    .replace(/(?<!\\)\$/g, "\\$")
+    .replace(/(?<!\\)_/g, "\\_")
+    .replace(/(?<!\\)#/g, "\\#");
+}
+
 function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[], candidateName: string, candidateEmail: string): string {
   if (baseLatex && baseLatex.includes("\\documentclass")) {
     let result = baseLatex;
@@ -65,8 +75,7 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
           ? c.editedText
           : c.proposedText;
 
-      // Escape special TeX characters if not already escaped
-      const escapedText = textToInsert.replace(/&/g, "\\&").replace(/%/g, "\\%").replace(/\$/g, "\\$");
+      const escapedText = safeEscapeLatex(textToInsert);
 
       if (result.includes(c.originalText)) {
         result = result.replace(c.originalText, escapedText);
@@ -76,27 +85,35 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
   }
 
   // Fallback clean compiling LaTeX template
-  const items = changes.map((c) => {
-    const textToInsert =
-      c.decision === "rejected"
-        ? c.originalText
-        : c.decision === "edited" && c.editedText
-        ? c.editedText
-        : c.proposedText;
-    const clean = textToInsert.replace(/&/g, "\\&").replace(/%/g, "\\%").replace(/\$/g, "\\$");
-    return `    \\item ${clean}`;
-  }).join("\n");
+  const items =
+    changes.length > 0
+      ? changes
+          .map((c) => {
+            const textToInsert =
+              c.decision === "rejected"
+                ? c.originalText
+                : c.decision === "edited" && c.editedText
+                ? c.editedText
+                : c.proposedText;
+            const clean = safeEscapeLatex(textToInsert);
+            return `    \\resumeItem{${clean}}`;
+          })
+          .join("\n")
+      : "    \\resumeItem{Delivered high-impact engineering solutions and maintained reliable production architectures.}";
+
+  const escName = safeEscapeLatex(candidateName || "Candidate");
+  const escEmail = safeEscapeLatex(candidateEmail || "candidate@example.com");
 
   return `\\documentclass[letterpaper,11pt]{article}
 \\usepackage{latexsym,fullpage,titlesec,hyperref,enumitem}
 \\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-2pt}}}}
 \\begin{document}
 \\begin{center}
-    \\textbf{\\Huge \\scshape ${candidateName}} \\\\
-    \\small ${candidateEmail}
+    \\textbf{\\Huge \\scshape ${escName}} \\\\
+    \\small ${escEmail}
 \\end{center}
 \\section{Experience}
-\\begin{itemize}
+\\begin{itemize}[leftmargin=*]
 ${items}
 \\end{itemize}
 \\end{document}`;

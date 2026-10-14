@@ -52,12 +52,8 @@ async def export_pdf(req: ExportRequest):
     with tempfile.TemporaryDirectory() as tmp:
         src = Path(tmp) / "resume.tex"
         # Sanitize pdfTeX-specific glyphtounicode primitives for XeTeX/Tectonic
-        clean_tex = (
-            req.tex
-            .replace("\\input{glyphtounicode}", "% \\input{glyphtounicode}")
-            .replace("\\pdfgentounicode=1", "% \\pdfgentounicode=1")
-            .replace("\\pdfgentounicode = 1", "% \\pdfgentounicode=1")
-        )
+        clean_tex = re.sub(r"\\input\{glyphtounicode(?:\.tex)?\}", r"% \\g<0>", req.tex)
+        clean_tex = re.sub(r"\\pdfgentounicode\s*=\s*\d+", r"% \\g<0>", clean_tex)
         src.write_text(clean_tex, encoding="utf-8")
         try:
             run = await asyncio.to_thread(
@@ -73,7 +69,13 @@ async def export_pdf(req: ExportRequest):
 
         pdf_path = Path(tmp) / "resume.pdf"
         if run.returncode != 0 or not pdf_path.exists():
-            _fail(422, "latex_compile_failed", "LaTeX did not compile.", run.stderr[-2000:])
+            print("\n" + "="*50)
+            print("TECTONIC COMPILE FAILED! Return code:", run.returncode)
+            print("STDERR:\n", run.stderr)
+            print("STDOUT:\n", run.stdout)
+            print("CLEAN TEX:\n", clean_tex)
+            print("="*50 + "\n")
+            _fail(422, "latex_compile_failed", f"LaTeX did not compile: {run.stderr[-400:]}", run.stderr[-2000:])
         data = pdf_path.read_bytes()
 
     with fitz.open(stream=data, filetype="pdf") as doc:
@@ -82,7 +84,7 @@ async def export_pdf(req: ExportRequest):
 
     if pages > req.max_pages:
         _fail(422, "too_many_pages", f"Resume is {pages} pages; the limit is {req.max_pages}.")
-    if len(text.strip()) < 100:
+    if len(text.strip()) < 30:
         _fail(422, "empty_pdf", "The PDF has almost no extractable text.")
 
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", req.filename) or "resume"

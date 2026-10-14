@@ -9,6 +9,16 @@ from app.models.schemas import (
     EvidenceRecord
 )
 
+def _escape_latex(s: str) -> str:
+    if not s:
+        return ""
+    s = re.sub(r'(?<!\\)&', r'\&', s)
+    s = re.sub(r'(?<!\\)%', r'\%', s)
+    s = re.sub(r'(?<!\\)\$', r'\$', s)
+    s = re.sub(r'(?<!\\)_', r'\_', s)
+    s = re.sub(r'(?<!\\)#', r'\#', s)
+    return s
+
 class PDFResumeExtractor:
     """
     Extracts text, contact details, sections, and bullet items from uploaded PDF resumes.
@@ -87,7 +97,13 @@ class PDFResumeExtractor:
         for sec_idx, (sec_title, sec_lines) in enumerate(raw_sections):
             sec_id = f"sec_{sec_idx}_{re.sub(r'[^a-zA-Z0-9]', '', sec_title.lower())}"
             bullets: List[ResumeBullet] = []
-            sec_latex_items = []
+            sec_latex_blocks = []
+            current_bullet_items = []
+
+            def flush_bullets():
+                if current_bullet_items:
+                    sec_latex_blocks.append("  \\begin{itemize}[leftmargin=*]\n" + "\n".join(current_bullet_items) + "\n  \\end{itemize}")
+                    current_bullet_items.clear()
 
             b_idx = 0
             for line in sec_lines:
@@ -100,10 +116,10 @@ class PDFResumeExtractor:
                     continue
 
                 if has_date_range and not has_bullet_marker:
-                    # Structural subheading (Role, Company, Dates)
-                    escaped_subheading = clean_line.replace("&", "\\&").replace("%", "\\%").replace("$", "\\$")
-                    sec_latex_items.append(f"  \\vspace{{3pt}}\\textbf{{{escaped_subheading}}}\\\\")
-                    # Still add to evidence bank for context
+                    # Structural subheading: flush any pending itemize list first
+                    flush_bullets()
+                    escaped_subheading = _escape_latex(clean_line)
+                    sec_latex_blocks.append(f"  \\vspace{{3pt}}\\textbf{{{escaped_subheading}}}\\par")
                     evidence_bank.append(EvidenceRecord(
                         id=f"ev_{sec_id}_hdr_{b_idx}",
                         source="uploaded_pdf",
@@ -115,28 +131,28 @@ class PDFResumeExtractor:
                     continue
 
                 # Detect if line is an achievement bullet or skill item
-                if has_bullet_marker or len(clean_line) > 20 or ":" in clean_line:
-                    if len(clean_line) > 10:
-                        ev_id = f"ev_{sec_id}_{b_idx}"
-                        bullet_item = ResumeBullet(
-                            id=f"{sec_id}_b{b_idx}",
-                            text=clean_line,
-                            raw_slot=f"\\resumeItem{{{clean_line}}}",
-                            evidence_id=ev_id,
-                            max_length_budget=int(len(clean_line) * 1.05)
-                        )
-                        bullets.append(bullet_item)
+                ev_id = f"ev_{sec_id}_{b_idx}"
+                bullet_item = ResumeBullet(
+                    id=f"{sec_id}_b{b_idx}",
+                    text=clean_line,
+                    raw_slot=f"\\resumeItem{{{clean_line}}}",
+                    evidence_id=ev_id,
+                    max_length_budget=int(len(clean_line) * 1.05)
+                )
+                bullets.append(bullet_item)
 
-                        evidence_bank.append(EvidenceRecord(
-                            id=ev_id,
-                            source="uploaded_pdf",
-                            raw_text=clean_line,
-                            context=f"Section: {sec_title}",
-                            verified=True
-                        ))
-                        escaped_bullet = clean_line.replace("&", "\\&").replace("%", "\\%").replace("$", "\\$")
-                        sec_latex_items.append(f"    \\resumeItem{{{escaped_bullet}}}")
-                        b_idx += 1
+                evidence_bank.append(EvidenceRecord(
+                    id=ev_id,
+                    source="uploaded_pdf",
+                    raw_text=clean_line,
+                    context=f"Section: {sec_title}",
+                    verified=True
+                ))
+                escaped_bullet = _escape_latex(clean_line)
+                current_bullet_items.append(f"    \\resumeItem{{{escaped_bullet}}}")
+                b_idx += 1
+
+            flush_bullets()
 
             section_obj = ResumeSection(
                 id=sec_id,
@@ -146,22 +162,25 @@ class PDFResumeExtractor:
             )
             sections.append(section_obj)
 
-            # Build LaTeX section
-            latex_body_parts.append(f"\\section{{{sec_title}}}\n  \\begin{{itemize}}\n" + "\n".join(sec_latex_items) + "\n  \\end{{itemize}}\n")
+            if sec_latex_blocks:
+                latex_body_parts.append(f"\\section{{{_escape_latex(sec_title)}}}\n" + "\n".join(sec_latex_blocks))
 
         # 4. Generate clean compiling LaTeX template from extracted PDF content
+        esc_name = _escape_latex(contact_name)
+        esc_email = _escape_latex(contact_email or '')
+        esc_phone = _escape_latex(contact_phone or '')
+
         compiled_latex = (
             "\\documentclass[letterpaper,11pt]{article}\n"
             "\\usepackage{latexsym,fullpage,titlesec,hyperref,enumitem}\n"
-            "\\pdfgentounicode=1\n"
             "\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-2pt}}}}\n"
             "\\begin{document}\n\n"
             "\\begin{center}\n"
-            f"    \\textbf{{\\Huge \\scshape {contact_name}}} \\\\\n"
-            f"    \\small {contact_email or ''} $|$ {contact_phone or ''}\n"
+            f"    \\textbf{{\\Huge \\scshape {esc_name}}} \\\\\n"
+            f"    \\small {esc_email} $|$ {esc_phone}\n"
             "\\end{center}\n\n"
-            + "\n".join(latex_body_parts) +
-            "\n\\end{document}\n"
+            + "\n\n".join(latex_body_parts) +
+            "\n\n\\end{document}\n"
         )
 
         resume_id = "pdf_res_" + hashlib.md5(full_text.encode("utf-8")).hexdigest()[:10]

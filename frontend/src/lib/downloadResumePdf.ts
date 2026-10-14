@@ -11,7 +11,8 @@ export async function downloadResumePdf(tex: string, name = "tailored_resume") {
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new Error(body?.detail?.message ?? "PDF export failed");
+    const logSnippet = body?.detail?.log ? ` (${body.detail.log.slice(-150).trim()})` : "";
+    throw new Error((body?.detail?.message ?? "PDF export failed") + logSnippet);
   }
 
   const blob = await res.blob();
@@ -35,7 +36,8 @@ export async function fetchResumePdfBlobUrl(tex: string): Promise<string> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new Error(body?.detail?.message ?? "Failed to compile preview PDF");
+    const logSnippet = body?.detail?.log ? ` (${body.detail.log.slice(-150).trim()})` : "";
+    throw new Error((body?.detail?.message ?? "Failed to compile preview PDF") + logSnippet);
   }
 
   const blob = await res.blob();
