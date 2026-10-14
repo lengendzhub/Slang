@@ -147,3 +147,10 @@
 .duration-fast {
   transition-duration: 180ms;
 }
+
+/* Stopgap Print Stylesheet */
+@media print {
+  @page { size: A4; margin: 0; }
+  nav, .stepper, .toolbar, button, header, footer { display: none !important; }
+  .resume-sheet { position: static; border: 0; box-shadow: none; color: #000; }
+}

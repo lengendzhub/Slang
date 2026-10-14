@@ -66,10 +66,12 @@ class ConstrainedEditor:
             "You must rewrite an existing resume bullet to highlight relevance to the target job, "
             "WITHOUT inventing metrics, unearned titles, or skills not present in the original anchor. "
             "NON-NEGOTIABLE RULES:\n"
-            "1. NEVER invent new numbers, percentages, or unearned technologies.\n"
-            f"2. You MUST retain the exact evidence_id: \"{evidence_id}\".\n"
-            f"3. Maximum length budget: {max_length_budget} characters. Do NOT exceed this length.\n"
-            "4. Output MUST be valid JSON matching this schema:\n"
+            "1. NEVER invent new technologies, programming languages (e.g. C++, Java, AWS), or frameworks unless they appear in the original anchor.\n"
+            "2. NEVER use hyperbolic words like 'expert', 'world-class', or 'master'.\n"
+            "3. Do NOT copy JD-specific project names (e.g. 'Google Pay', 'growth & communications') unless genuinely present in the anchor.\n"
+            f"4. You MUST retain the exact evidence_id: \"{evidence_id}\".\n"
+            f"5. Maximum length budget: {max_length_budget} characters. Do NOT exceed this length.\n"
+            "6. Output MUST be valid JSON matching this schema:\n"
             "{\n"
             f'  "rewritten_text": "new bullet string under {max_length_budget} chars",\n'
             '  "reason": "short explanation of why this aligns with the job",\n'

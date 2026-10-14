@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Download,
@@ -10,8 +10,11 @@ import {
   ExternalLink,
   ShieldCheck,
   FileCheck2,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { BulletChange } from "./SplitScreenReview";
+import { downloadResumePdf, fetchResumePdfBlobUrl } from "@/lib/downloadResumePdf";
 
 interface Step3ExportProps {
   candidateName: string;
@@ -51,6 +54,54 @@ const INTERVIEW_QUESTIONS = [
   },
 ];
 
+function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[], candidateName: string, candidateEmail: string): string {
+  if (baseLatex && baseLatex.includes("\\documentclass")) {
+    let result = baseLatex;
+    for (const c of changes) {
+      const textToInsert =
+        c.decision === "rejected"
+          ? c.originalText
+          : c.decision === "edited" && c.editedText
+          ? c.editedText
+          : c.proposedText;
+
+      // Escape special TeX characters if not already escaped
+      const escapedText = textToInsert.replace(/&/g, "\\&").replace(/%/g, "\\%").replace(/\$/g, "\\$");
+
+      if (result.includes(c.originalText)) {
+        result = result.replace(c.originalText, escapedText);
+      }
+    }
+    return result;
+  }
+
+  // Fallback clean compiling LaTeX template
+  const items = changes.map((c) => {
+    const textToInsert =
+      c.decision === "rejected"
+        ? c.originalText
+        : c.decision === "edited" && c.editedText
+        ? c.editedText
+        : c.proposedText;
+    const clean = textToInsert.replace(/&/g, "\\&").replace(/%/g, "\\%").replace(/\$/g, "\\$");
+    return `    \\item ${clean}`;
+  }).join("\n");
+
+  return `\\documentclass[letterpaper,11pt]{article}
+\\usepackage{latexsym,fullpage,titlesec,hyperref,enumitem}
+\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-2pt}}}}
+\\begin{document}
+\\begin{center}
+    \\textbf{\\Huge \\scshape ${candidateName}} \\\\
+    \\small ${candidateEmail}
+\\end{center}
+\\section{Experience}
+\\begin{itemize}
+${items}
+\\end{itemize}
+\\end{document}`;
+}
+
 export function Step3Export({
   candidateName,
   candidateEmail,
@@ -62,56 +113,66 @@ export function Step3Export({
 }: Step3ExportProps) {
   const [showInterviewPrep, setShowInterviewPrep] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(true);
+  const [compileError, setCompileError] = useState<string | null>(null);
 
-  const approvedBullets = reviewedChanges.map((c) =>
-    c.decision === "rejected"
-      ? c.originalText
-      : c.decision === "edited" && c.editedText
-      ? c.editedText
-      : c.proposedText
-  );
+  const tailoredTex = buildTailoredTex(rawLatex, reviewedChanges, candidateName, candidateEmail);
+  const safeFilename = `${candidateName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_tailored_resume`;
+
+  // Fetch real compiled PDF from backend on mount
+  useEffect(() => {
+    let active = true;
+    let createdUrl: string | null = null;
+
+    async function loadPdf() {
+      setPdfLoading(true);
+      setCompileError(null);
+      try {
+        const url = await fetchResumePdfBlobUrl(tailoredTex);
+        if (active) {
+          createdUrl = url;
+          setPdfBlobUrl(url);
+        }
+      } catch (err: any) {
+        if (active) {
+          console.error("PDF Preview generation error:", err);
+          setCompileError(err.message || "Failed to compile LaTeX preview.");
+        }
+      } finally {
+        if (active) setPdfLoading(false);
+      }
+    }
+
+    loadPdf();
+
+    return () => {
+      active = false;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [tailoredTex]);
 
   const handleDownloadTex = () => {
-    const textContent =
-      rawLatex ||
-      `% Tailored Resume for ${targetRole}\n% Candidate: ${candidateName}\n\\documentclass[11pt,a4paper]{article}\n\\begin{document}\n% Generated cleanly by TailorAI\n\\end{document}`;
-    const blob = new Blob([textContent], { type: "text/x-tex" });
+    const blob = new Blob([tailoredTex], { type: "text/x-tex" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${candidateName.toLowerCase().replace(/\s+/g, "_")}_${targetRole.toLowerCase().replace(/\s+/g, "_")}_resume.tex`;
+    a.download = `${safeFilename}.tex`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleDownloadPdf = async () => {
     setDownloadingPdf(true);
-    // Trigger PDF compile or download via backend endpoint
+    setCompileError(null);
     try {
-      const res = await fetch("http://localhost:8000/exports", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          resume_id: "active",
-          format: "pdf",
-        }),
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${candidateName.toLowerCase().replace(/\s+/g, "_")}_${targetRole.toLowerCase().replace(/\s+/g, "_")}_resume.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        // Fallback printable view
-        window.print();
-      }
-    } catch {
-      window.print();
+      await downloadResumePdf(tailoredTex, safeFilename);
+    } catch (err: any) {
+      console.error("Download PDF error:", err);
+      setCompileError(err.message || "PDF compilation failed.");
+      alert(`Export Error: ${err.message || "Could not compile PDF with Tectonic."}`);
     } finally {
       setDownloadingPdf(false);
     }
@@ -123,7 +184,7 @@ export function Step3Export({
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-status-supported-bg text-status-supported-text text-[12px] font-medium">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          All Changes Reviewed & Approved
+          All Changes Reviewed & Verified
         </div>
         <h2 className="text-[28px] sm:text-[34px] font-semibold tracking-tight text-ink">
           Your Resume Is Ready for {targetRole}
@@ -133,44 +194,62 @@ export function Step3Export({
         </p>
       </div>
 
+      {compileError && (
+        <div className="p-4 rounded-xl bg-status-missing-bg border border-status-missing-text/30 flex items-start gap-3 text-[13px] text-status-missing-text">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">LaTeX Compilation Notice</p>
+            <p className="mt-0.5">{compileError}</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid: Preview on Left, 4 Checks & Actions on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: PDF Preview Frame (7 cols) */}
-        <div className="lg:col-span-7 bg-canvas border border-hairline rounded-card shadow-paper p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between border-b border-hairline pb-4">
+        {/* Left: REAL PDF IFRAME PREVIEW (7 cols) */}
+        <div className="lg:col-span-7 bg-canvas border border-hairline rounded-card shadow-paper p-4 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-hairline pb-3">
             <div>
-              <h3 className="font-semibold text-[18px] text-ink">{candidateName}</h3>
-              <p className="text-[12px] text-ink-muted">{candidateEmail} • {targetRole}</p>
+              <h3 className="font-semibold text-[17px] text-ink">{candidateName}</h3>
+              <p className="text-[12px] text-ink-muted">{candidateEmail} • Tailored LaTeX PDF</p>
             </div>
             <span className="font-mono text-[11px] text-status-supported-text bg-status-supported-bg px-2.5 py-1 rounded-pill font-medium">
               1 Page • 100% Fit
             </span>
           </div>
 
-          {/* Rendered Preview Bullets */}
-          <div className="space-y-4 text-[13px] leading-relaxed text-ink">
-            <div>
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted mb-2">
-                Tailored Professional Summary
-              </h4>
-              <p className="p-3 bg-surface rounded-lg border border-hairline text-ink">
-                {approvedBullets[0] || "Analytical technical specialist with experience translating operational workflows into automated data pipelines and structured reporting models."}
-              </p>
-            </div>
-
-            <div>
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted mb-2">
-                Tailored Accomplishments
-              </h4>
-              <div className="space-y-2">
-                {approvedBullets.slice(1).map((bullet, idx) => (
-                  <div key={idx} className="flex items-start gap-2 p-2.5 bg-surface rounded-lg border border-hairline">
-                    <span className="text-status-supported-text font-bold select-none">•</span>
-                    <span>{bullet}</span>
-                  </div>
-                ))}
+          {/* Real PDF Embed in Iframe */}
+          <div className="w-full min-h-[680px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center">
+            {pdfLoading && (
+              <div className="flex flex-col items-center gap-2 text-[13px] text-ink-muted">
+                <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                <span>Compiling real LaTeX PDF preview with Tectonic...</span>
               </div>
-            </div>
+            )}
+
+            {!pdfLoading && pdfBlobUrl && (
+              <iframe
+                src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                className="w-full h-[700px] rounded-xl border-0"
+                title="Real Compiled LaTeX Resume PDF Preview"
+              />
+            )}
+
+            {!pdfLoading && !pdfBlobUrl && compileError && (
+              <div className="p-6 text-center space-y-2 max-w-[400px]">
+                <AlertCircle className="w-8 h-8 text-status-missing-text mx-auto" />
+                <h4 className="font-semibold text-[15px] text-ink">Preview Compilation Issue</h4>
+                <p className="text-[12px] text-ink-muted">{compileError}</p>
+                <button
+                  type="button"
+                  onClick={handleDownloadTex}
+                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-pill bg-surface border border-hairline text-ink text-[12px] font-medium"
+                >
+                  <FileCode2 className="w-3.5 h-3.5" />
+                  Inspect .tex Source
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -224,10 +303,19 @@ export function Step3Export({
                 type="button"
                 onClick={handleDownloadPdf}
                 disabled={downloadingPdf}
-                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple cursor-pointer disabled:opacity-50"
               >
-                <Download className="w-4 h-4" />
-                {downloadingPdf ? "Generating PDF..." : "Download PDF"}
+                {downloadingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Compiling & Downloading PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Download Real PDF
+                  </>
+                )}
               </button>
 
               <button

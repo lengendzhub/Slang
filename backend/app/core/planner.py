@@ -79,12 +79,13 @@ class Planner:
                 rewritten_text = bullet.text
                 reason = "Aligned phrasing to highlight mission-critical skills."
 
-                # 1. Attempt Llama LLM rewrite if bullet is relevant to JD
+                # 1. Attempt Llama LLM rewrite for top priority relevant bullets (capped at 4 for high responsiveness)
                 is_relevant = any(kw in bullet_lower for kw in jd_keywords) or any(
                     tok in bullet_lower for tok in ["redis", "postgres", "microservices", "mentored", "rust", "querylens"]
                 )
 
-                if is_relevant and self.editor:
+                llm_call_count = getattr(self, "_llm_call_count", 0)
+                if is_relevant and self.editor and llm_call_count < 4:
                     target_req_texts = [r.text for r in jd_analysis.requirements if r.classification.value != "Missing"]
                     llama_res = self.editor.rewrite_bullet(
                         original_text=bullet.text,
@@ -98,6 +99,7 @@ class Planner:
                         rewritten_text = llama_res["rewritten_text"]
                         reason = llama_res["reason"]
                         needs_tailoring = True
+                        self._llm_call_count = llm_call_count + 1
 
                 # 2. Deterministic fallback if LLM was skipped or unavailable
                 if not needs_tailoring:
