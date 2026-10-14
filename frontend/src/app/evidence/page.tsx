@@ -1,0 +1,301 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { FrostedNav } from "@/components/ui/FrostedNav";
+import {
+  ShieldCheck,
+  Plus,
+  GitBranch,
+  FileText,
+  CheckCircle2,
+  Trash2,
+  Edit2,
+  ExternalLink,
+  Search,
+} from "lucide-react";
+
+interface EvidenceRecordItem {
+  id: string;
+  source: "master_resume" | "github" | "project_report";
+  sourceName: string;
+  text: string;
+  context: string;
+  verified: boolean;
+  dateAdded: string;
+}
+
+export default function EvidenceBankPage() {
+  const [evidenceList, setEvidenceList] = useState<EvidenceRecordItem[]>([
+    {
+      id: "ev_sec_exp_0",
+      source: "master_resume",
+      sourceName: "master_resume.tex // Experience",
+      text: "Architected distributed caching layer with Redis, reducing p99 API query latency by 42% across 10M daily requests.",
+      context: "Nexus Cloud Systems (Senior Software Engineer)",
+      verified: true,
+      dateAdded: "Oct 14, 2026",
+    },
+    {
+      id: "ev_sec_exp_1",
+      source: "master_resume",
+      sourceName: "master_resume.tex // Experience",
+      text: "Spearheaded migration of core billing microservices to Go and PostgreSQL, improving transaction throughput by 3.5x.",
+      context: "Nexus Cloud Systems (Senior Software Engineer)",
+      verified: true,
+      dateAdded: "Oct 14, 2026",
+    },
+    {
+      id: "ev_sec_exp_2",
+      source: "master_resume",
+      sourceName: "master_resume.tex // Experience",
+      text: "Mentored 4 junior engineers on distributed consensus, design patterns, and automated testing practices.",
+      context: "Nexus Cloud Systems (Senior Software Engineer)",
+      verified: true,
+      dateAdded: "Oct 14, 2026",
+    },
+    {
+      id: "ev_git_01",
+      source: "github",
+      sourceName: "github.com/alexmorgan/HyperKV",
+      text: "Benchmarked against Etcd and achieved 85,000 writes/sec with strict linearizable consistency guarantees in Rust.",
+      context: "Open Source Raft Storage Engine",
+      verified: true,
+      dateAdded: "Oct 10, 2026",
+    },
+    {
+      id: "ev_proj_02",
+      source: "project_report",
+      sourceName: "QueryLens Product Whitepaper",
+      text: "Constructed an AST-based query analyzer suggesting index additions. Adopted by 1,200+ GitHub developers with 4.9-star rating.",
+      context: "Developer Tooling Project",
+      verified: true,
+      dateAdded: "Oct 08, 2026",
+    },
+  ]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newText, setNewText] = useState("");
+  const [newContext, setNewContext] = useState("");
+  const [newSource, setNewSource] = useState<"github" | "project_report">("github");
+
+  const handleDelete = (id: string) => {
+    setEvidenceList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleToggleVerify = (id: string) => {
+    setEvidenceList((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, verified: !item.verified } : item
+      )
+    );
+  };
+
+  const handleAddEvidence = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newText.trim()) return;
+
+    const newRecord: EvidenceRecordItem = {
+      id: `ev_ext_${Date.now().toString().slice(-4)}`,
+      source: newSource,
+      sourceName: newSource === "github" ? "GitHub Repository Import" : "Project Report Import",
+      text: newText.trim(),
+      context: newContext.trim() || "External Candidate Proof",
+      verified: true,
+      dateAdded: "Just now",
+    };
+
+    setEvidenceList([newRecord, ...evidenceList]);
+    setNewText("");
+    setNewContext("");
+    setShowAddForm(false);
+  };
+
+  const filtered = evidenceList.filter(
+    (e) =>
+      e.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.context.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--ink)]">
+      <FrostedNav />
+
+      <main className="flex-1 max-w-[1200px] w-full mx-auto px-6 py-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-[var(--line-light)]">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--blue)]">
+                Evidence Bank Management
+              </span>
+              <span className="text-[11px] text-[var(--ink-2)]">•</span>
+              <span className="text-[12px] text-[var(--ink-2)]">Non-Negotiable Rule #2</span>
+            </div>
+            <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[var(--ink)]">
+              Candidate Proof Anchors ({evidenceList.length})
+            </h1>
+            <p className="text-[14px] text-[var(--ink-2)]">
+              Every resume claim generated by TailorAI points to one of these immutable records.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="pill-btn pill-btn-primary px-5 py-2 text-[14px] shadow-sm flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            {showAddForm ? "Close Form" : "Add External Source"}
+          </button>
+        </div>
+
+        {/* Add External Evidence Form */}
+        {showAddForm && (
+          <form
+            onSubmit={handleAddEvidence}
+            className="apple-card p-6 mb-8 border-2 border-[var(--blue)]/30"
+          >
+            <h3 className="text-[17px] font-semibold text-[var(--ink)] mb-1">
+              Add Evidence Anchor (GitHub / Project Text)
+            </h3>
+            <p className="text-[13px] text-[var(--ink-2)] mb-4">
+              Add verified achievements from your older resumes, GitHub repositories, or technical whitepapers.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-[12px] font-semibold text-[var(--ink-2)] uppercase block mb-1">
+                  Source Type
+                </label>
+                <select
+                  value={newSource}
+                  onChange={(e) => setNewSource(e.target.value as any)}
+                  className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--bg-alt)] text-[13px] text-[var(--ink)]"
+                >
+                  <option value="github">GitHub Repo / README</option>
+                  <option value="project_report">Project Report / Whitepaper</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[12px] font-semibold text-[var(--ink-2)] uppercase block mb-1">
+                  Project or Repo Name
+                </label>
+                <input
+                  type="text"
+                  value={newContext}
+                  onChange={(e) => setNewContext(e.target.value)}
+                  placeholder="e.g. github.com/username/project"
+                  className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--bg-alt)] text-[13px] text-[var(--ink)]"
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-[var(--ink-2)] uppercase block mb-1">
+                Verified Achievement Text
+              </label>
+              <textarea
+                value={newText}
+                onChange={(e) => setNewText(e.target.value)}
+                placeholder="Paste the exact bullet or accomplishment metric..."
+                className="w-full p-3 rounded-xl border border-[var(--line)] bg-[var(--bg-alt)] text-[13px] font-mono text-[var(--ink)] resize-none"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="pill-btn px-4 py-1.5 text-[13px] border border-[var(--line-light)] text-[var(--ink)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="pill-btn pill-btn-primary px-5 py-1.5 text-[13px]"
+              >
+                Save Evidence Anchor
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Search Bar */}
+        <div className="mb-6 relative">
+          <Search className="w-4 h-4 text-[var(--ink-2)] absolute left-4 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search evidence records by keyword, evidence_id, or source..."
+            className="w-full pl-11 pr-4 py-2.5 rounded-2xl border border-[var(--line-light)] bg-[var(--bg)] text-[14px] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--blue)]"
+          />
+        </div>
+
+        {/* Evidence List */}
+        <div className="space-y-4">
+          {filtered.map((ev) => (
+            <div key={ev.id} className="apple-card p-5">
+              <div className="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-[var(--line-light)] gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-mono font-semibold text-[var(--blue)]">
+                    {ev.id}
+                  </span>
+                  <span className="text-[11px] text-[var(--ink-2)]">•</span>
+                  <span className="text-[12px] text-[var(--ink-2)] flex items-center gap-1">
+                    {ev.source === "github" ? (
+                      <GitBranch className="w-3.5 h-3.5 text-[var(--blue)]" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5" />
+                    )}
+                    {ev.sourceName}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                      ev.verified
+                        ? "bg-[#34c759]/10 text-[#34c759] border-[#34c759]/20"
+                        : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    {ev.verified ? "User Confirmed" : "Needs Review"}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[14px] font-mono text-[var(--ink)] leading-relaxed mb-3">
+                "{ev.text}"
+              </p>
+
+              <div className="pt-2 flex flex-wrap items-center justify-between text-[12px] text-[var(--ink-2)] gap-2">
+                <span>Context: {ev.context} • Added {ev.dateAdded}</span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleToggleVerify(ev.id)}
+                    className="pill-btn px-2.5 py-1 text-[11px] border border-[var(--line-light)] hover:text-[var(--ink)]"
+                  >
+                    {ev.verified ? "Mark Unverified" : "Confirm Record"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ev.id)}
+                    className="pill-btn px-2.5 py-1 text-[11px] border border-red-500/20 text-red-600 hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
