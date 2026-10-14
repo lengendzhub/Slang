@@ -10,16 +10,19 @@ from app.models.schemas import (
     DiffDecision,
     CareerMode
 )
+from app.core.constrained_editor import ConstrainedEditor
 
 class Planner:
     """
     Determines which sections and bullet points to emphasize, re-order,
     or rephrase to align with the target JD while enforcing per-bullet length budgets.
-    Applies auto-trimming so generated bullets never cause layout overflows.
+    Uses Llama via ConstrainedEditor when available, with deterministic fallback.
     """
 
-    def __init__(self, mode: CareerMode = CareerMode.SAME_CAREER):
+    def __init__(self, mode: CareerMode = CareerMode.SAME_CAREER, use_llm: bool = True):
         self.mode = mode
+        self.use_llm = use_llm
+        self.editor = ConstrainedEditor() if use_llm else None
 
     @staticmethod
     def enforce_length_budget(text: str, max_chars: int) -> str:
@@ -29,7 +32,6 @@ class Planner:
         if len(text) <= max_chars:
             return text
 
-        # Condensation rules
         condensed = text
         replacements = [
             ("layer handling", "tier for"),
@@ -45,6 +47,9 @@ class Planner:
                 break
             condensed = condensed.replace(src, dst)
 
+        if len(condensed) > max_chars:
+            condensed = condensed[:max_chars - 3] + "..."
+
         return condensed
 
     def plan_diffs(
@@ -55,7 +60,6 @@ class Planner:
         diffs: List[DiffItem] = []
         diff_counter = 0
 
-        # Keywords in JD to prioritize
         jd_keywords = set()
         for req in jd_analysis.requirements:
             for word in req.text.lower().split():
@@ -75,26 +79,47 @@ class Planner:
                 rewritten_text = bullet.text
                 reason = "Aligned phrasing to highlight mission-critical skills."
 
-                if "redis" in bullet_lower and ("caching" in jd_keywords or "storage" in jd_keywords or "latency" in jd_keywords):
-                    needs_tailoring = True
-                    rewritten_text = "Architected multi-region Redis caching layer handling 10M+ daily events, cutting p99 API query latency by 42%."
-                    reason = "Emphasized multi-region scale and p99 query latency constraints specified in JD."
-                elif "microservices" in bullet_lower and ("throughput" in jd_keywords or "postgres" in jd_keywords or "database" in jd_keywords):
-                    needs_tailoring = True
-                    rewritten_text = "Spearheaded core microservice refactoring to Go and PostgreSQL, increasing distributed transaction throughput by 3.5x."
-                    reason = "Highlighted high-throughput PostgreSQL and Go microservices engineering."
-                elif "mentored" in bullet_lower and any(k in jd_keywords for k in ["mentor", "lead", "architectural", "squad"]):
-                    needs_tailoring = True
-                    rewritten_text = "Led and mentored 4 software engineers on distributed consensus patterns and system architecture reviews."
-                    reason = "Directly satisfies the senior engineering mentorship and architectural review requirement."
-                elif "querylens" in bullet_lower or "ast" in bullet_lower:
-                    if self.mode == CareerMode.CAREER_TRANSITION:
+                # 1. Attempt Llama LLM rewrite if bullet is relevant to JD
+                is_relevant = any(kw in bullet_lower for kw in jd_keywords) or any(
+                    tok in bullet_lower for tok in ["redis", "postgres", "microservices", "mentored", "rust", "querylens"]
+                )
+
+                if is_relevant and self.editor:
+                    target_req_texts = [r.text for r in jd_analysis.requirements if r.classification.value != "Missing"]
+                    llama_res = self.editor.rewrite_bullet(
+                        original_text=bullet.text,
+                        evidence_id=bullet.evidence_id,
+                        target_role=jd_analysis.title,
+                        target_requirements=target_req_texts,
+                        max_length_budget=budget,
+                        mode=self.mode
+                    )
+                    if llama_res:
+                        rewritten_text = llama_res["rewritten_text"]
+                        reason = llama_res["reason"]
                         needs_tailoring = True
-                        rewritten_text = "Spearheaded product lifecycle for QueryLens developer tool from user research to release, driving adoption across 1,200+ engineers."
-                        reason = "Reframed developer tool creation to showcase technical product ownership and developer community adoption."
+
+                # 2. Deterministic fallback if LLM was skipped or unavailable
+                if not needs_tailoring:
+                    if "redis" in bullet_lower and ("caching" in jd_keywords or "storage" in jd_keywords or "latency" in jd_keywords):
+                        needs_tailoring = True
+                        rewritten_text = "Architected multi-region Redis caching layer handling 10M+ daily events, cutting p99 API query latency by 42%."
+                        reason = "Emphasized multi-region scale and p99 query latency constraints specified in JD."
+                    elif "microservices" in bullet_lower and ("throughput" in jd_keywords or "postgres" in jd_keywords or "database" in jd_keywords):
+                        needs_tailoring = True
+                        rewritten_text = "Spearheaded core microservice refactoring to Go and PostgreSQL, increasing distributed transaction throughput by 3.5x."
+                        reason = "Highlighted high-throughput PostgreSQL and Go microservices engineering."
+                    elif "mentored" in bullet_lower and any(k in jd_keywords for k in ["mentor", "lead", "architectural", "squad"]):
+                        needs_tailoring = True
+                        rewritten_text = "Led and mentored 4 software engineers on distributed consensus patterns and system architecture reviews."
+                        reason = "Directly satisfies the senior engineering mentorship and architectural review requirement."
+                    elif "querylens" in bullet_lower or "ast" in bullet_lower:
+                        if self.mode == CareerMode.CAREER_TRANSITION:
+                            needs_tailoring = True
+                            rewritten_text = "Spearheaded product lifecycle for QueryLens developer tool from user research to release, driving adoption across 1,200+ engineers."
+                            reason = "Reframed developer tool creation to showcase technical product ownership and developer community adoption."
 
                 if needs_tailoring:
-                    # Enforce length budget with auto-trim
                     rewritten_text = self.enforce_length_budget(rewritten_text, budget)
                     new_len = len(rewritten_text)
                     fits_budget = new_len <= budget
