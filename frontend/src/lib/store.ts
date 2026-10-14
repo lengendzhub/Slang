@@ -36,6 +36,8 @@ export interface EvidenceItemState {
   dateAdded: string;
 }
 
+export type EvidenceItem = EvidenceItemState;
+
 export interface SiblingItemState {
   id: string;
   role: string;

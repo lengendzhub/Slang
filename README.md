@@ -13,173 +13,106 @@
 4. **Content-Slot Only Editing:** Edit only text inside recognized content slots (`\resumeItem`, `\item`). Preamble, macros, spacing, and fonts remain untouched.
 5. **Human Verification Gateway:** Nothing is exported until the user has accepted, rejected, or edited each change.
 6. **Compile Sandbox:** Compile user LaTeX only inside a locked-down container (no network, shell escape off, read-only root, memory/CPU limits).
-7. **Documented Rubric Fit:** Transparent evidence-coverage score. Never presented as a shortlist probability or fake ATS percentage.
+7. **Documented Rubric Fit:** Transparent evidence-coverage score ("11 of 14 requirements matched"). Never presented as a shortlist probability or fake ATS percentage.
 
 ---
 
-## 2. Repository Structure
+## 2. Authentic Apple Editorial Design Tokens
 
-```text
-d:/Slang/
-├── frontend/                          # Next.js 16 (App Router), TypeScript, Tailwind CSS, Framer Motion
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── page.tsx               # Apple-style Landing Page (all 10 sections)
-│   │   │   ├── studio/page.tsx        # Step 1: Upload, Step 2: JD & Track, Step 3: Stream
-│   │   │   ├── report/page.tsx        # Fit Estimate & JD Rubric breakdown
-│   │   │   ├── diff/page.tsx          # Git-style side-by-side review & evidence popover
-│   │   │   ├── export/page.tsx        # ATS PyMuPDF checklist & deliverable download
-│   │   │   ├── siblings/page.tsx      # Master & tailored child resumes tree
-│   │   │   ├── evidence/page.tsx      # Evidence Bank manager & external sources
-│   │   │   ├── settings/page.tsx      # Privacy, export all data, permanent purge
-│   │   │   ├── (auth)/signin/page.tsx # Sign In
-│   │   │   ├── (auth)/signup/page.tsx # Sign Up
-│   │   │   ├── layout.tsx             # Root layout with Inter font
-│   │   │   └── globals.css            # Apple design tokens, typography, glassmorphism
-│   │   ├── components/
-│   │   │   ├── landing/               # Hero, ValueProps, StickyHowItWorks, RoleSwitcherDemo, TrustSection, LatexToPdfAnimation, SiblingsSection, InterviewPrepTeaser, FaqSection, FinalCta, Footer
-│   │   │   └── ui/                    # SegmentedControl, PillButton, ProgressRing, EvidenceChip, FrostedNav
-│   │   └── lib/                       # sample-data.ts, store.ts
-├── backend/                           # Python FastAPI Service
-│   ├── app/
-│   │   ├── main.py                    # REST API & SSE event streaming
-│   │   ├── core/
-│   │   │   ├── resume_parser.py       # AST/slot extraction & round-trip verification
-│   │   │   ├── jd_analyzer.py         # Category classifier & seniority detection
-│   │   │   ├── matcher.py             # Direct, Transferable, Missing classifier
-│   │   │   ├── planner.py             # Length-budgeted bullet selector & auto-trimmer
-│   │   │   ├── fact_validator.py      # Strict evidence_id validator (Rule #2)
-│   │   │   ├── latex_renderer.py      # Slot-only renderer preserving macros & preamble
-│   │   │   ├── compiler_sandbox.py    # Sandboxed runner & command sanitizer
-│   │   │   ├── pdf_validator.py       # PyMuPDF reading order & ATS integrity check
-│   │   │   └── report_builder.py      # Rubric-based fit estimator & gap report
-│   │   └── models/schemas.py          # Pydantic schemas
-│   ├── sandbox/
-│   │   └── Dockerfile                 # Locked-down Tectonic container (read-only, net=none)
-│   ├── tests/
-│   │   ├── test_parser_roundtrip.py   # Round-trip parse/re-render equality check
-│   │   ├── test_fact_validator.py     # Unanchored claim rejection verification
-│   │   ├── test_length_budget.py      # Character/length budget overflow verification
-│   │   └── test_end_to_end.py         # Full pipeline integration test
-│   └── requirements.txt
-├── templates/                         # Jake's Resume master & sample JDs
-│   ├── jakes_resume.tex
-│   └── sample_jds/
-│       ├── software_engineer.txt
-│       └── product_manager.txt
-├── pytest.ini                         # Pytest configuration
-└── README.md
+```css
+:root {
+  /* Apple Light Mode */
+  --bg: #ffffff;
+  --bg-alt: #f5f5f7;
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --blue: #0071e3;
+  --blue-hover: #0077ed;
+  --line: #d2d2d7;
+
+  /* Semantic Status Tokens */
+  --status-supported-text: #1d7d34;
+  --status-supported-bg: #eafbe7;
+  --status-transferable-text: #b25000;
+  --status-transferable-bg: #fff5eb;
+  --status-missing-text: #d70015;
+  --status-missing-bg: #ffefee;
+}
+
+.dark {
+  /* Apple Dark Mode */
+  --bg: #000000;
+  --bg-alt: #1c1c1e;
+  --ink: #f5f5f7;
+  --ink-2: #98989d;
+  --blue: #2997ff;
+  --blue-hover: #40a2ff;
+  --line: #38383a;
+
+  --status-supported-text: #30d158;
+  --status-supported-bg: rgba(48, 209, 88, 0.14);
+  --status-transferable-text: #ff9f0a;
+  --status-transferable-bg: rgba(255, 159, 10, 0.14);
+  --status-missing-text: #ff453a;
+  --status-missing-bg: rgba(255, 69, 58, 0.14);
+}
 ```
 
 ---
 
-## 3. Quickstart & Local Setup
+## 3. Four Core Views
 
-### Prerequisites
-* **Node.js**: v18+ (tested on v24.21.0)
-* **Python**: 3.10+ (tested on 3.11.9)
-* **Docker** (optional for local dev; mandatory for production compilation sandbox)
+1. **Landing Page (`/`)**:
+   - Clear headline and split-screen interface frame.
+   - Interactive 3-tab Role Switcher (*Software Engineer* | *Product Manager* | *Business Analyst*).
+   - 3-Card Bento Grid (*Zero Fabricated Claims*, *LaTeX Layout Preserved*, *You Have the Final Say*).
+   - Minimal privacy footer.
+2. **The Workspace (`/workspace`)**:
+   - Single linear flow: `[1. Resume & Job] -> [2. Review Changes] -> [3. Download]`.
+   - **Step 1**: Multi-format `.tex` / `.pdf` drag-and-drop, template lock recognition, Evidence Bank modal, 3-mode transition switcher (*Same Field*, *Career Pivot*, *Entry Level*).
+   - **Step 2**: Split-screen review (65% Paper View with inline diffs, Accept / Reject / Edit, char budget warning, `.tex` source toggle; 35% Honest Match Checklist with collapsible Direct, Transferable, and Missing groups; Sticky review gate bar).
+   - **Step 3**: Final compiled PDF preview, 4-item ATS sanity checks, Download PDF and `.tex`, and collapsible 5 Interview Questions accordion.
+3. **My Library (`/library`)**:
+   - *Tab 1: Tailored Resumes* (job title, match count, download PDF).
+   - *Tab 2: Master Resume & Verified Facts* (manage confirmed facts and master templates).
+4. **Account & Privacy (`/account`)**:
+   - Profile details, Light/Dark appearance toggle, and one-click "Delete All My Data" (zero-retention guarantee).
 
-### Frontend Setup
+---
+
+## 4. Setup & Running Locally
+
+### Backend (FastAPI + Llama 3.2 via Ollama)
+```bash
+# 1. Start Ollama and pull Llama 3.2
+ollama run llama3.2:latest
+
+# 2. Start FastAPI Backend
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Frontend (Next.js 16 + React 19 + Tailwind CSS)
 ```bash
 cd frontend
 npm install
 npm run dev
-```
-The application will launch at `http://localhost:3000`.
-
-To build the production bundle:
-```bash
-npm run build
+# Accessible at http://localhost:3000
 ```
 
-### Backend Setup
+---
+
+## 5. Running Automated Tests
+
+Run the full Python test suite verifying all 7 non-negotiable rules:
 ```bash
 cd backend
-python -m venv venv
-# Windows:
-.\venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
-
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m pytest -v
 ```
-Interactive API docs are available at `http://localhost:8000/docs`.
-
----
-
-## 4. Environment Variables (`.env.example`)
-
-Create a `.env` file in `backend/`:
-
-```env
-# Server
-PORT=8000
-ENVIRONMENT=development
-CORS_ORIGINS=["http://localhost:3000"]
-
-# Sandbox Security
-USE_DOCKER_SANDBOX=false
-TECTONIC_MEMORY_LIMIT=256MB
-TECTONIC_TIMEOUT_SECONDS=8
-
-# Optional LLM Integration (Uses deterministic local validator by default)
-OPENAI_API_KEY=""
-GEMINI_API_KEY=""
-ANTHROPIC_API_KEY=""
-```
-
----
-
-## 5. Running the Test Suite
-
-All tests enforce the core quality invariants:
-
-```bash
-# Run all backend tests
-python -m pytest
-```
-
-### Automated Test Coverage
-1. `test_parser_roundtrip.py`: Verifies that parsing and re-rendering an unmodified master resume preserves the document byte-for-byte.
-2. `test_fact_validator.py`: Verifies that any proposed bullet without an `evidence_id` or pointing to a non-existent anchor is rejected immediately.
-3. `test_length_budget.py`: Verifies that bullet character counts are budget-constrained to prevent page overflows.
-4. `test_end_to_end.py`: Tests the full pipeline from raw master `.tex` and JD input through matching, planning, fact validation, slot rendering, sandbox compiling, and PyMuPDF ATS extraction.
-
----
-
-## 6. Docker Sandbox Compilation (Production)
-
-To build the locked-down container:
-```bash
-docker build -t tailorai-sandbox -f backend/sandbox/Dockerfile .
-```
-
-To run a compilation in isolation:
-```bash
-docker run --rm \
-  --network none \
-  --read-only \
-  --memory 256m \
-  --cpus 1.0 \
-  -v /path/to/input:/sandbox/input:ro \
-  -v /path/to/output:/sandbox/output:rw \
-  tailorai-sandbox /sandbox/input/resume.tex
-```
-
----
-
-## 7. The Tri-State Truth Matrix
-
-| Status | Color | Visual Icon | Meaning | System Action |
-|---|---|---|---|---|
-| **Supported** | `#34c759` | `CheckCircle2` | Direct evidence anchor found in Evidence Bank | Rewritten with length budget; tagged with `evidence_id` |
-| **Needs Confirmation** | `#ff9f0a` | `AlertTriangle` | Transferable skill framing from adjacent work | Flagged for explicit user confirmation in Diff Review |
-| **Missing / Gap** | `#ff3b30` | `XCircle` | Target requirement has no evidence support | Isolated in Gap Report with learning tips; **never written to resume** |
-
----
-
-## 8. License & Authorship
-
-Built by the TailorAI Engineering Group. MIT License.
+Tests cover:
+- `test_pdf_extractor.py`: Multi-section PDF resume and contact extraction.
+- `test_parser_roundtrip.py`: Byte-for-byte LaTeX preamble and macro preservation.
+- `test_fact_validator.py`: Rule #2 rejection of unanchored claims.
+- `test_length_budget.py`: Per-bullet character budget enforcement.
+- `test_constrained_editor.py`: Llama 3.2 structured JSON rewrites.
+- `test_end_to_end.py`: Full upload-to-tailor pipeline execution.
