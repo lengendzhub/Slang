@@ -19,10 +19,8 @@ RUN curl -sSL https://github.com/tectonic-typesetting/tectonic/releases/download
     | tar -xz -C /usr/local/bin \
     && chmod +x /usr/local/bin/tectonic
 
-# Pre-warm tectonic cache with a minimal test file so production compiles are instantaneous
-RUN echo "\\documentclass{article}\\begin{document}init\\end{document}" > /tmp/init.tex \
-    && tectonic /tmp/init.tex --outdir /tmp \
-    && rm -rf /tmp/init.*
+# Verify Tectonic binary installation
+RUN tectonic --version
 
 # Install Python requirements
 COPY requirements.txt .
