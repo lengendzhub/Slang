@@ -3,16 +3,19 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies & download official Tectonic binary
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     fontconfig \
+    libfontconfig1 \
     libfreetype6 \
+    libgraphite2-3 \
+    libharfbuzz0b \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Tectonic typesetting binary
-RUN curl -sSL https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-gnu.tar.gz \
+# Install Tectonic typesetting binary (static musl release with zero external shared library conflicts)
+RUN curl -sSL https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz \
     | tar -xz -C /usr/local/bin \
     && chmod +x /usr/local/bin/tectonic
 
