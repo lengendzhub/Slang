@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   description: "One master resume in LaTeX becomes many truthful, job-specific resumes. Verified evidence anchors, locked-down sandboxing, and zero hallucinations.",
   keywords: ["AI resume tailoring", "LaTeX resume", "ATS optimization", "Career transition", "Evidence-based resume"],
   authors: [{ name: "Slang Team" }],
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export const viewport = {

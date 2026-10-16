@@ -108,7 +108,10 @@ export function FrostedNav() {
           </button>
 
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-semibold text-[17px] tracking-tight text-ink">
+            <div className="w-6 h-6 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-0.5 shadow-sm group-hover:border-accent/50 transition-colors overflow-hidden">
+              <img src="/icon.svg" alt="Slang logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-semibold text-[17px] tracking-tight text-ink group-hover:text-accent transition-colors">
               Slang
             </span>
           </Link>

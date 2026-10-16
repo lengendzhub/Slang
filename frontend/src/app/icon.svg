@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="slangBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="slangGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#slangBg)" />
+  <rect x="1.5" y="1.5" width="61" height="61" rx="14.5" fill="none" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="1.5" />
+  <!-- Stylized precision S -->
+  <path d="M44 19 C39 15 33 14 27 15 C19 16.5 15 22 15 28 C15 38 33 34 33 43 C33 48.5 28 50.5 22 50 C16 49.5 13 46 13 46" 
+        fill="none" 
+        stroke="url(#slangGrad)" 
+        stroke-width="7" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+  <!-- Precision LaTeX Sparkle/Anchor -->
+  <circle cx="45" cy="45" r="3.5" fill="#38bdf8" />
+</svg>
