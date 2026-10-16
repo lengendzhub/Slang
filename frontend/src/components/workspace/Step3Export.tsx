@@ -61,6 +61,10 @@ const INTERVIEW_QUESTIONS = [
 function safeEscapeLatex(text: string): string {
   if (!text) return "";
   return text
+    .replace(/\u2013/g, "--")
+    .replace(/\u2014/g, "---")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, "''")
     .replace(/(?<!\\)&/g, "\\&")
     .replace(/(?<!\\)%/g, "\\%")
     .replace(/(?<!\\)\$/g, "\\$")
@@ -83,9 +87,9 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
       const escOriginal = safeEscapeLatex(c.originalText);
 
       if (result.includes(c.originalText)) {
-        result = result.replace(c.originalText, escapedText);
+        result = result.replace(c.originalText, () => escapedText);
       } else if (result.includes(escOriginal)) {
-        result = result.replace(escOriginal, escapedText);
+        result = result.replace(escOriginal, () => escapedText);
       }
     }
     return result;

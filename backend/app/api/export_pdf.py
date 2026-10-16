@@ -49,7 +49,7 @@ def _preview(text: str, n: int = 110) -> str:
 
 def sanitize_latex_characters(tex_code: str) -> str:
     r"""
-    Sanitizes unescaped special characters (&, #) that commonly break XeTeX/Tectonic
+    Sanitizes unescaped special characters (%, _, &, #, $) that commonly break XeTeX/Tectonic
     when user resumes or pasted text contains raw symbols outside tabular environments.
     Only operates within \begin{document}...\end{document} to prevent corrupting
     macro definitions (like \newcommand{\resumeItem}[1]{...}) in the preamble,
@@ -81,14 +81,26 @@ def sanitize_latex_characters(tex_code: str) -> str:
             sanitized_lines.append(line)
             continue
             
-        if in_tabular or stripped.startswith("%"):
+        if stripped.startswith("%"):
             sanitized_lines.append(line)
             continue
             
+        l = line
         # Outside tabular, raw '&' must be '\&'
-        l = re.sub(r'(?<!\\)&', r'\&', line)
-        # Raw '#' not followed by a digit (so we don't break macro parameter tokens like #1) must be '\#'
+        if not in_tabular:
+            l = re.sub(r'(?<!\\)&', r'\&', l)
+        
+        # Raw '#' not followed by a digit (preserve #1, #2 macro params)
         l = re.sub(r'(?<!\\)#(?!\d)', r'\#', l)
+
+        # Raw '%' must be '\%'
+        l = re.sub(r'(?<!\\)%', r'\%', l)
+
+        # Raw '_' outside math mode
+        l = re.sub(r'(?<!\\)_', r'\_', l)
+
+        # Raw '$' when used as currency (e.g. $100K, $50M) not in math mode
+        l = re.sub(r'(?<!\\)\$(\d)', r'\$\1', l)
         
         sanitized_lines.append(l)
         
@@ -132,6 +144,16 @@ async def export_pdf(req: ExportRequest):
     # Sanitize pdfTeX-specific glyphtounicode primitives for XeTeX/Tectonic
     clean_tex = re.sub(r"\\input\{glyphtounicode(?:\.tex)?\}", r"% \\g<0>", tex_content)
     clean_tex = re.sub(r"\\pdfgentounicode\s*=\s*\d+", r"% \\g<0>", clean_tex)
+    clean_tex = (
+        clean_tex.replace("\u2013", "--")
+        .replace("\u2014", "---")
+        .replace("\u2018", "'")
+        .replace("\u2019", "'")
+        .replace("\u201c", "``")
+        .replace("\u201d", "''")
+        .replace("\u00a0", " ")
+        .replace("\ufeff", "")
+    )
     clean_tex = sanitize_latex_characters(clean_tex)
 
     data = b""
@@ -158,8 +180,15 @@ async def export_pdf(req: ExportRequest):
                 _fail(504, "compile_timeout", "LaTeX compilation took too long.")
 
             if run.returncode != 0 or not pdf_path.exists():
-                err_log = run.stderr[-2000:]
-                _fail(422, "latex_compile_failed", f"LaTeX did not compile: {run.stderr[-400:]}", err_log)
+                combined_output = f"{run.stderr}\n{run.stdout}".strip()
+                err_log = combined_output[-2000:]
+                tex_err = ""
+                for eline in combined_output.split("\n"):
+                    if eline.startswith("!") or eline.startswith("error:"):
+                        tex_err = eline
+                        break
+                err_msg = f"LaTeX did not compile: {tex_err}" if tex_err else f"LaTeX did not compile: {run.stderr[-300:]}"
+                _fail(422, "latex_compile_failed", err_msg, err_log)
 
             data = pdf_path.read_bytes()
 
