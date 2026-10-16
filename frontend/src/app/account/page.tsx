@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FrostedNav } from "@/components/ui/FrostedNav";
+import { MobileTabBar } from "@/components/ui/MobileTabBar";
 import {
-  Shield,
   Trash2,
   Download,
   Moon,
@@ -26,9 +26,20 @@ export default function AccountPage() {
     const session = loadUserSession();
     if (session.candidateEmail) setCandidateEmail(session.candidateEmail);
     if (session.candidateName) setCandidateName(session.candidateName);
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setIsDark(true);
-    }
+    const savedTheme = localStorage.getItem("slang_theme");
+    setIsDark(savedTheme === "dark");
+
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      if (typeof customEvent.detail === "boolean") {
+        setIsDark(customEvent.detail);
+      } else {
+        setIsDark(localStorage.getItem("slang_theme") === "dark");
+      }
+    };
+
+    window.addEventListener("slang_theme_changed", handleThemeChange);
+    return () => window.removeEventListener("slang_theme_changed", handleThemeChange);
   }, []);
 
   const toggleAppearance = () => {
@@ -36,9 +47,12 @@ export default function AccountPage() {
     setIsDark(next);
     if (next) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("slang_theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
+      localStorage.setItem("slang_theme", "light");
     }
+    window.dispatchEvent(new CustomEvent("slang_theme_changed", { detail: next }));
   };
 
   const handleExportData = () => {
@@ -59,7 +73,7 @@ export default function AccountPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `tailorai_user_archive_${Date.now()}.json`;
+    a.download = `slang_user_archive_${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -76,10 +90,13 @@ export default function AccountPage() {
 
     setIsPurging(true);
     clearUserSession();
+    setCandidateName("Candidate");
+    setCandidateEmail("");
 
     // Call backend delete if available
     try {
-      await fetch("http://localhost:8000/me/data", { method: "DELETE" });
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      await fetch(`${apiUrl}/me/data`, { method: "DELETE" });
     } catch {
       // client-side purge succeeds
     }
@@ -87,20 +104,16 @@ export default function AccountPage() {
     setTimeout(() => {
       setIsPurging(false);
       setPurged(true);
-    }, 800);
+    }, 400);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-surface text-ink selection:bg-accent selection:text-white">
       <FrostedNav />
 
-      <main className="flex-1 max-w-[780px] w-full mx-auto px-6 py-12 space-y-8">
+      <main className="flex-1 max-w-[780px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-28 space-y-8">
         {/* Header */}
         <div className="pb-6 border-b border-hairline">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-canvas border border-hairline text-ink-muted text-[12px] font-medium shadow-subtle mb-2">
-            <Shield className="w-3.5 h-3.5 text-accent" />
-            Privacy First Architecture
-          </div>
           <h1 className="text-[32px] font-semibold tracking-tight text-ink">
             Account & Privacy
           </h1>
@@ -167,7 +180,7 @@ export default function AccountPage() {
               Data Sovereignty & Zero-Retention
             </h3>
             <p className="text-[13px] text-ink-muted leading-relaxed">
-              TailorAI never trains models on your resumes, JDs, or evidence facts. You have complete control to export or permanently erase your documents at any time.
+              Slang never trains models on your resumes, JDs, or evidence facts. You have complete control to export or permanently erase your documents at any time.
             </p>
           </div>
 
@@ -200,6 +213,9 @@ export default function AccountPage() {
           </div>
         </div>
       </main>
+
+      {/* Responsive Mobile Bottom Tab Bar (Visible < lg) */}
+      <MobileTabBar />
     </div>
   );
 }

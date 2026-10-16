@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FrostedNav } from "@/components/ui/FrostedNav";
+import { MobileTabBar } from "@/components/ui/MobileTabBar";
 import {
   FileText,
   ShieldCheck,
@@ -28,76 +29,44 @@ interface TailoredResumeRecord {
 export default function MyLibraryPage() {
   const [activeTab, setActiveTab] = useState<"resumes" | "facts">("resumes");
   const [candidateName, setCandidateName] = useState("Candidate");
+  const [resumes, setResumes] = useState<TailoredResumeRecord[]>([]);
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>([]);
   const [newFactText, setNewFactText] = useState("");
   const [newFactSource, setNewFactSource] = useState("");
 
-  const sampleResumes: TailoredResumeRecord[] = [
-    {
-      id: "res_1",
-      jobTitle: "Technical Business Analyst",
-      company: "Apex Enterprise",
-      date: "Oct 14, 2026",
-      matchedCount: "11 of 14 matched",
-      status: "Approved & Exported",
-    },
-    {
-      id: "res_2",
-      jobTitle: "Distributed Systems Lead",
-      company: "CloudScale Systems",
-      date: "Oct 10, 2026",
-      matchedCount: "13 of 15 matched",
-      status: "Approved & Exported",
-    },
-    {
-      id: "res_3",
-      jobTitle: "Platform Systems Architect",
-      company: "Nexus Grid",
-      date: "Oct 04, 2026",
-      matchedCount: "10 of 12 matched",
-      status: "Approved & Exported",
-    },
-  ];
-
-  useEffect(() => {
+  const loadData = () => {
     const session = loadUserSession();
     if (session.candidateName) {
       setCandidateName(session.candidateName);
+    } else {
+      setCandidateName("Candidate");
     }
+
     if (session.evidenceBank && session.evidenceBank.length > 0) {
       setEvidenceList(session.evidenceBank);
     } else {
-      // Clean default facts based on candidate
-      setEvidenceList([
-        {
-          id: "ev_01",
-          source: "master_resume.tex",
-          sourceName: "Master Resume",
-          text: "2 years of experience building Python microservices, PostgreSQL schemas, and automated CI/CD pipelines.",
-          context: "Summary, Line 18",
-          verified: true,
-          dateAdded: "Oct 14, 2026",
-        },
-        {
-          id: "ev_02",
-          source: "master_resume.tex",
-          sourceName: "Master Resume",
-          text: "Wrote Python scripts to parse 50,000+ daily server logs and exported error summaries to PostgreSQL tables.",
-          context: "Experience, Line 42",
-          verified: true,
-          dateAdded: "Oct 14, 2026",
-        },
-        {
-          id: "ev_03",
-          source: "master_resume.tex",
-          sourceName: "Master Resume",
-          text: "Collaborated with QA and product leads during bi-weekly sprint planning to clarify API acceptance criteria.",
-          context: "Experience, Line 49",
-          verified: true,
-          dateAdded: "Oct 14, 2026",
-        },
-      ]);
+      setEvidenceList([]);
     }
+
+    const tailored: TailoredResumeRecord[] = (session.siblings || []).map((s, idx) => ({
+      id: s.id || `res_${idx}`,
+      jobTitle: s.role || "Tailored Resume",
+      company: s.company || "Target Company",
+      date: s.date || "Recently",
+      matchedCount: `${s.fitScore || 90}% fit rubric`,
+      status: "Approved & Exported",
+    }));
+    setResumes(tailored);
+  };
+
+  useEffect(() => {
+    loadData();
+    window.addEventListener("slang_session_updated", loadData);
+    window.addEventListener("tailorai_session_updated", loadData);
+    return () => {
+      window.removeEventListener("slang_session_updated", loadData);
+      window.removeEventListener("tailorai_session_updated", loadData);
+    };
   }, []);
 
   const handleAddFact = (e: React.FormEvent) => {
@@ -131,7 +100,7 @@ export default function MyLibraryPage() {
     <div className="min-h-screen flex flex-col bg-surface text-ink selection:bg-accent selection:text-white">
       <FrostedNav />
 
-      <main className="flex-1 max-w-[1120px] w-full mx-auto px-6 py-10 space-y-8">
+      <main className="flex-1 max-w-[1120px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 pb-28 space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-hairline">
           <div>
@@ -139,7 +108,7 @@ export default function MyLibraryPage() {
               <ShieldCheck className="w-3.5 h-3.5 text-status-supported-text" />
               Verified Knowledge Base
             </div>
-            <h1 className="text-[32px] font-semibold tracking-tight text-ink">
+            <h1 className="text-[28px] sm:text-[32px] font-semibold tracking-tight text-ink">
               My Library
             </h1>
             <p className="text-[14px] text-ink-muted mt-0.5">
@@ -149,7 +118,7 @@ export default function MyLibraryPage() {
 
           <Link
             href="/workspace"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle transition-all self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle transition-all self-start sm:self-auto min-h-[44px]"
           >
             <Plus className="w-4 h-4" />
             Tailor New Resume
@@ -157,10 +126,10 @@ export default function MyLibraryPage() {
         </div>
 
         {/* 2-Tab Segmented Control */}
-        <div className="flex">
+        <div className="flex overflow-x-auto max-w-full pb-1">
           <div
             role="tablist"
-            className="inline-flex p-1 rounded-pill bg-hairline/40 border border-hairline"
+            className="inline-flex p-1 rounded-pill bg-hairline/40 border border-hairline whitespace-nowrap"
           >
             <button
               role="tab"
@@ -172,7 +141,7 @@ export default function MyLibraryPage() {
                   : "text-ink-muted hover:text-ink"
               }`}
             >
-              Tailored Resumes ({sampleResumes.length})
+              Tailored Resumes ({resumes.length})
             </button>
             <button
               role="tab"
@@ -192,50 +161,73 @@ export default function MyLibraryPage() {
         {/* TAB 1: Tailored Resumes List */}
         {activeTab === "resumes" && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {sampleResumes.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-canvas border border-hairline rounded-card shadow-subtle p-6 flex flex-col justify-between space-y-4 hover:border-ink-muted/40 transition-all"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">
-                        {item.company}
-                      </span>
-                      <span className="text-[11px] font-mono text-ink-muted">
-                        {item.date}
-                      </span>
-                    </div>
-                    <h3 className="text-[17px] font-semibold text-ink">
-                      {item.jobTitle}
-                    </h3>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text text-[12px] font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {item.matchedCount}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-hairline flex items-center justify-between text-[13px]">
-                    <Link
-                      href="/workspace"
-                      className="text-accent hover:underline flex items-center gap-1"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      Duplicate
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => alert(`Downloading ${item.jobTitle} PDF...`)}
-                      className="inline-flex items-center gap-1 text-ink-muted hover:text-ink"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      PDF
-                    </button>
-                  </div>
+            {resumes.length === 0 ? (
+              <div className="bg-canvas border border-hairline rounded-card shadow-subtle p-12 text-center max-w-[540px] mx-auto space-y-4">
+                <div className="w-12 h-12 rounded-full bg-surface text-ink-muted mx-auto flex items-center justify-center">
+                  <FileText className="w-6 h-6" />
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1">
+                  <h3 className="text-[17px] font-semibold text-ink">
+                    No tailored resumes in library
+                  </h3>
+                  <p className="text-[13px] text-ink-muted leading-relaxed">
+                    Once you tailor and export a resume for a target job description, it will be saved here in your library.
+                  </p>
+                </div>
+                <Link
+                  href="/workspace"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Tailor a Resume in Workspace
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {resumes.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-canvas border border-hairline rounded-card shadow-subtle p-6 flex flex-col justify-between space-y-4 hover:border-ink-muted/40 transition-all"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">
+                          {item.company}
+                        </span>
+                        <span className="text-[11px] font-mono text-ink-muted">
+                          {item.date}
+                        </span>
+                      </div>
+                      <h3 className="text-[17px] font-semibold text-ink">
+                        {item.jobTitle}
+                      </h3>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text text-[12px] font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {item.matchedCount}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-hairline flex items-center justify-between text-[13px]">
+                      <Link
+                        href="/workspace"
+                        className="text-accent hover:underline flex items-center gap-1"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Duplicate
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => alert(`Downloading ${item.jobTitle} PDF...`)}
+                        className="inline-flex items-center gap-1 text-ink-muted hover:text-ink cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -309,44 +301,53 @@ export default function MyLibraryPage() {
                 Active Evidence Bank ({evidenceList.length})
               </h3>
 
-              <div className="space-y-3">
-                {evidenceList.map((fact) => (
-                  <div
-                    key={fact.id}
-                    className="bg-canvas border border-hairline rounded-xl p-4 flex items-start justify-between gap-4 shadow-subtle"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] text-accent bg-surface px-2 py-0.5 rounded border border-hairline">
-                          {fact.id}
-                        </span>
-                        <span className="text-[11px] text-ink-muted">
-                          {fact.context || fact.source}
-                        </span>
-                        <span className="text-[11px] text-status-supported-text font-medium">
-                          ✓ Verified
-                        </span>
-                      </div>
-                      <p className="text-[14px] text-ink leading-relaxed">
-                        {fact.text}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteFact(fact.id)}
-                      className="text-ink-muted hover:text-status-missing-text p-1.5 rounded-lg hover:bg-surface transition-colors"
-                      title="Remove fact"
+              {evidenceList.length === 0 ? (
+                <div className="bg-canvas border border-hairline rounded-xl p-8 text-center text-[13px] text-ink-muted">
+                  No verified facts registered yet. Enter achievements above or upload a master resume in Workspace.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {evidenceList.map((fact) => (
+                    <div
+                      key={fact.id}
+                      className="bg-canvas border border-hairline rounded-xl p-4 flex items-start justify-between gap-4 shadow-subtle"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[11px] text-accent bg-surface px-2 py-0.5 rounded border border-hairline">
+                            {fact.id}
+                          </span>
+                          <span className="text-[11px] text-ink-muted">
+                            {fact.context || fact.source}
+                          </span>
+                          <span className="text-[11px] text-status-supported-text font-medium">
+                            ✓ Verified
+                          </span>
+                        </div>
+                        <p className="text-[14px] text-ink leading-relaxed">
+                          {fact.text}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFact(fact.id)}
+                        className="text-ink-muted hover:text-status-missing-text p-1.5 rounded-lg hover:bg-surface transition-colors cursor-pointer"
+                        title="Remove fact"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
       </main>
+
+      {/* Responsive Mobile Bottom Tab Bar (Visible < lg) */}
+      <MobileTabBar />
     </div>
   );
 }

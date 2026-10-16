@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { FrostedNav } from "@/components/ui/FrostedNav";
 import { loadUserSession, saveUserSession, UserSessionState } from "@/lib/store";
+import { generateJdFilename } from "@/lib/filenameHelper";
 import {
   Download,
   FileCode,
@@ -62,8 +63,13 @@ export default function ExportPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    const sanitizedName = candidateName.replace(/[^a-zA-Z0-9]/g, "_");
-    a.download = `${sanitizedName}_Tailored_Resume.${format}`;
+    const safeName = generateJdFilename({
+      candidateName,
+      targetRole,
+      targetCompany: session?.targetCompany,
+      jdText: session?.targetJdText,
+    });
+    a.download = `${safeName}.${format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

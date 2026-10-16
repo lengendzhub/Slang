@@ -1,4 +1,4 @@
-# Locked-Down Tectonic Compilation Container for TailorAI
+# Locked-Down Tectonic Compilation Container for Slang
 # Non-Negotiable Rule #6:
 # - No network access (--network none)
 # - Read-only root filesystem (--read-only)

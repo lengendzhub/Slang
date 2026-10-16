@@ -10,9 +10,9 @@ interface FaqItem {
 
 const faqs: FaqItem[] = [
   {
-    question: "How does TailorAI ensure it never hallucinates skills or metrics?",
+    question: "How does Slang ensure it never hallucinates skills or metrics?",
     answer:
-      "Unlike generic LLM wrappers, TailorAI maintains an immutable Evidence Bank constructed from your master resume and verified external sources. Every single generated bullet carries an evidence_id. Our Fact Validator strictly blocks and discards any claim without an evidence anchor. Unsupported JD requirements are reported to you as learning gaps—never written into your resume.",
+      "Unlike generic LLM wrappers, Slang maintains an immutable Evidence Bank constructed from your master resume and verified external sources. Every single generated bullet carries an evidence_id. Our Fact Validator strictly blocks and discards any claim without an evidence anchor. Unsupported JD requirements are reported to you as learning gaps—never written into your resume.",
   },
   {
     question: "Is compiling user-uploaded LaTeX files safe on your servers?",
@@ -27,7 +27,7 @@ const faqs: FaqItem[] = [
   {
     question: "Why do you provide a 'Fit Estimate' instead of an 'ATS Probability Score'?",
     answer:
-      "Because ATS score percentages are misleading marketing gimmicks. Real employers configure their applicant tracking systems with widely differing filters, and keyword frequency does not predict shortlists. TailorAI calculates a transparent, rubric-based fit score based on empirical evidence coverage, and uses PyMuPDF to test actual ATS text stream extraction.",
+      "Because ATS score percentages are misleading marketing gimmicks. Real employers configure their applicant tracking systems with widely differing filters, and keyword frequency does not predict shortlists. Slang calculates a transparent, rubric-based fit score based on empirical evidence coverage, and uses PyMuPDF to test actual ATS text stream extraction.",
   },
   {
     question: "How do you handle career transitions (e.g. IT to Product Management)?",

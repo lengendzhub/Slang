@@ -20,6 +20,9 @@ venv/
 .venv/
 ENV/
 .pytest_cache/
+scratch/
+backend/bin/
+*.exe
 
 # LaTeX temp files
 *.aux

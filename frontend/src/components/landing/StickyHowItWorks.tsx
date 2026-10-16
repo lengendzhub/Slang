@@ -171,7 +171,7 @@ export function StickyHowItWorks() {
             Deterministic Pipeline
           </p>
           <h2 className="section-title text-[var(--ink)] mb-4">
-            How TailorAI works.
+            How Slang works.
           </h2>
           <p className="section-sub">
             Five deliberate steps designed to preserve truth, protect your LaTeX styling, and guarantee verifiable claims.
@@ -250,16 +250,16 @@ export function StickyHowItWorks() {
           <div className="lg:col-span-7">
             <div className="apple-card p-6 border-hairline relative min-h-[340px] flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-[var(--line-light)] mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                    <span className="ml-2 font-mono text-[11px] text-[var(--ink-2)]">
+                <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[var(--line-light)] mb-4 gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-400 shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0" />
+                    <span className="ml-2 font-mono text-[11px] text-[var(--ink-2)] truncate max-w-[180px] sm:max-w-none">
                       {steps[activeStep].mockup.header}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[var(--bg-alt)] border border-[var(--line-light)] text-[var(--ink-2)]">
+                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[var(--bg-alt)] border border-[var(--line-light)] text-[var(--ink-2)] shrink-0">
                     {steps[activeStep].mockup.badge}
                   </span>
                 </div>

@@ -55,11 +55,11 @@ export function RoleSwitcher() {
   return (
     <div className="w-full max-w-[840px] mx-auto">
       {/* 3-Tab Segmented Control */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-6 overflow-x-auto max-w-full pb-1">
         <div
           role="tablist"
           aria-label="Role preview tabs"
-          className="inline-flex p-1 rounded-pill bg-hairline/40 border border-hairline"
+          className="inline-flex p-1 rounded-pill bg-hairline/40 border border-hairline whitespace-nowrap"
         >
           {roles.map((role) => {
             const isActive = activeRole === role;
@@ -69,7 +69,7 @@ export function RoleSwitcher() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveRole(role)}
-                className={`px-4 sm:px-6 py-2 rounded-pill text-[13px] font-medium transition-all duration-fast ease-apple ${
+                className={`min-h-[40px] px-3.5 sm:px-6 py-2 rounded-pill text-[12px] sm:text-[13px] font-medium transition-all duration-fast ease-apple ${
                   isActive
                     ? "bg-canvas text-ink shadow-subtle"
                     : "text-ink-muted hover:text-ink"
@@ -83,8 +83,8 @@ export function RoleSwitcher() {
       </div>
 
       {/* Single Resume Card Preview */}
-      <div className="bg-canvas border border-hairline rounded-card shadow-paper p-6 sm:p-8 space-y-6">
-        <div className="flex items-center justify-between border-b border-hairline pb-4">
+      <div className="bg-canvas border border-hairline rounded-card shadow-paper p-4 sm:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-hairline pb-4 text-left">
           <div>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
               Target Role Orientation
@@ -93,7 +93,7 @@ export function RoleSwitcher() {
               Same Real Experience → Tailored for {current.title}
             </h3>
           </div>
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-[12px] font-medium ${current.statusClass}`}>
+          <span className={`self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-pill text-[12px] font-medium ${current.statusClass}`}>
             {current.matchType === "direct" ? (
               <ShieldCheck className="w-3.5 h-3.5" />
             ) : (

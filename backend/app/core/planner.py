@@ -103,23 +103,28 @@ class Planner:
 
                 # 2. Deterministic fallback if LLM was skipped or unavailable
                 if not needs_tailoring:
-                    if "redis" in bullet_lower and ("caching" in jd_keywords or "storage" in jd_keywords or "latency" in jd_keywords):
-                        needs_tailoring = True
-                        rewritten_text = "Architected multi-region Redis caching layer handling 10M+ daily events, cutting p99 API query latency by 42%."
-                        reason = "Emphasized multi-region scale and p99 query latency constraints specified in JD."
-                    elif "microservices" in bullet_lower and ("throughput" in jd_keywords or "postgres" in jd_keywords or "database" in jd_keywords):
-                        needs_tailoring = True
-                        rewritten_text = "Spearheaded core microservice refactoring to Go and PostgreSQL, increasing distributed transaction throughput by 3.5x."
-                        reason = "Highlighted high-throughput PostgreSQL and Go microservices engineering."
-                    elif "mentored" in bullet_lower and any(k in jd_keywords for k in ["mentor", "lead", "architectural", "squad"]):
-                        needs_tailoring = True
-                        rewritten_text = "Led and mentored 4 software engineers on distributed consensus patterns and system architecture reviews."
-                        reason = "Directly satisfies the senior engineering mentorship and architectural review requirement."
-                    elif "querylens" in bullet_lower or "ast" in bullet_lower:
-                        if self.mode == CareerMode.CAREER_TRANSITION:
+                    matching_kws = [kw for kw in jd_keywords if kw in bullet_lower]
+                    if matching_kws:
+                        if "redis" in bullet_lower:
                             needs_tailoring = True
-                            rewritten_text = "Spearheaded product lifecycle for QueryLens developer tool from user research to release, driving adoption across 1,200+ engineers."
-                            reason = "Reframed developer tool creation to showcase technical product ownership and developer community adoption."
+                            rewritten_text = "Architected high-throughput distributed caching layer with Redis and low-latency query optimizations."
+                            reason = "Emphasized high-throughput distributed caching and query latency constraints using Redis."
+                        elif "microservice" in bullet_lower or "postgres" in bullet_lower or "go" in bullet_lower:
+                            needs_tailoring = True
+                            rewritten_text = "Spearheaded core microservices engineering in Go and PostgreSQL, improving distributed transaction throughput."
+                            reason = "Highlighted high-throughput microservices engineering with PostgreSQL and Go."
+                        elif "flutter" in bullet_lower or "react" in bullet_lower or "frontend" in bullet_lower:
+                            needs_tailoring = True
+                            rewritten_text = "Engineered responsive, component-driven frontend interfaces with modular architecture and state management."
+                            reason = "Highlighted modular frontend architecture and clean state management."
+                        elif "testing" in bullet_lower or "automation" in bullet_lower or "qa" in bullet_lower:
+                            needs_tailoring = True
+                            rewritten_text = "Automated comprehensive API testing pipelines and harnesses, streamlining regression cycles."
+                            reason = "Framed automated testing implementation to match quality assurance requirements."
+                        elif "crop" in bullet_lower or "vision" in bullet_lower or "ai" in bullet_lower:
+                            needs_tailoring = True
+                            rewritten_text = "Built applied computer vision pipeline for automated image classification and offline client inference."
+                            reason = "Emphasized applied machine learning pipeline engineering and offline client inference."
 
                 if needs_tailoring:
                     rewritten_text = self.enforce_length_budget(rewritten_text, budget)

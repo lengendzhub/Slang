@@ -130,6 +130,7 @@ class TailorJob(BaseModel):
     progress: int
     fit_rubric: Optional[FitRubricScore] = None
     diffs: List[DiffItem] = Field(default_factory=list)
+    requirements: List[JDRequirement] = Field(default_factory=list)
     created_at: str
 
 class DecisionRequest(BaseModel):

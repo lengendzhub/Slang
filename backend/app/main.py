@@ -29,7 +29,7 @@ from app.core.pdf_validator import PDFValidator
 from app.core.report_builder import ReportBuilder
 
 app = FastAPI(
-    title="TailorAI API",
+    title="Slang API",
     description="Precision LaTeX Resume Tailoring Engine with Zero-Hallucination Evidence Anchoring",
     version="1.0.0"
 )
@@ -50,11 +50,27 @@ db_jobs: Dict[str, TailorJob] = {}
 db_evidence: Dict[str, List[EvidenceRecord]] = {}
 db_siblings: Dict[str, List[SiblingResume]] = {}
 
+def init_default_resumes():
+    from pathlib import Path
+    for cand_path in [Path("templates/jakes_resume.tex"), Path("../templates/jakes_resume.tex")]:
+        if cand_path.exists():
+            try:
+                tex = cand_path.read_text(encoding="utf-8")
+                parsed = ResumeParser(tex).parse()
+                parsed.id = "master_default"
+                db_resumes["master_default"] = parsed
+                db_evidence["master_default"] = parsed.evidence_bank
+                break
+            except Exception as e:
+                print("Failed to initialize default master resume:", e)
+
+init_default_resumes()
+
 @app.get("/")
 def health_check():
     return {
         "status": "online",
-        "service": "TailorAI Engine",
+        "service": "Slang Engine",
         "version": "1.0.0",
         "sandbox_status": "locked_down",
         "fact_validator": "active"
@@ -93,6 +109,17 @@ async def upload_resume(
     db_evidence[parsed.id] = parsed.evidence_bank
 
     return parsed
+
+@app.get("/resumes", response_model=List[ParsedResume])
+async def list_resumes():
+    return list(db_resumes.values())
+
+@app.get("/resumes/{resume_id}", response_model=ParsedResume)
+async def get_resume_by_id(resume_id: str):
+    res = db_resumes.get(resume_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    return res
 
 # 2. POST /jds
 @app.post("/jds", response_model=JDAnalysis)
@@ -143,6 +170,7 @@ async def create_tailor_job(
         progress=100,
         fit_rubric=rubric_score,
         diffs=valid_diffs,
+        requirements=matched_reqs,
         created_at="2026-10-14"
     )
 
@@ -253,12 +281,30 @@ async def create_sibling(sibling: SiblingResume):
 
 # 10. DELETE /me/data (Privacy purge)
 @app.delete("/me/data")
+@app.post("/me/data/clear")
 async def delete_my_data():
     db_resumes.clear()
     db_jds.clear()
     db_jobs.clear()
     db_evidence.clear()
+    db_siblings.clear()
+    init_default_resumes()
     return {
         "status": "purged",
         "message": "All user resumes, job descriptions, diffs, and evidence records have been permanently erased."
     }
+
+# 11. GET /llm/pool-status (Load-balanced LLM multi-key telemetry)
+@app.get("/llm/pool-status")
+async def get_llm_pool_status():
+    from app.core.constrained_editor import ConstrainedEditor
+    editor = ConstrainedEditor()
+    return {
+        "cloud_pool": editor.key_pool.get_stats(),
+        "local_ollama": {
+            "url": editor.ollama_url,
+            "detected_model": editor.get_available_model(),
+            "status": "ready" if editor.get_available_model() else "offline"
+        }
+    }
+

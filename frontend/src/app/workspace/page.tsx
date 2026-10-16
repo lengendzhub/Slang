@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FrostedNav } from "@/components/ui/FrostedNav";
+import { MobileTabBar } from "@/components/ui/MobileTabBar";
 import { Step1Input } from "@/components/workspace/Step1Input";
 import SplitScreenReview, {
   BulletChange,
@@ -9,17 +10,24 @@ import SplitScreenReview, {
 } from "@/components/workspace/SplitScreenReview";
 import { Step3Export } from "@/components/workspace/Step3Export";
 import { EvidenceModal } from "@/components/workspace/EvidenceModal";
-import { ChevronRight, Check } from "lucide-react";
+import { DraftAligningModal, ModalStatus } from "@/components/workspace/DraftAligningModal";
+import Link from "next/link";
+import { ChevronRight, Check, Trash2 } from "lucide-react";
 import {
   loadUserSession,
   saveUserSession,
+  clearUserSession,
   UserSessionState,
 } from "@/lib/store";
 
 export default function WorkspacePage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<ModalStatus>("running");
   const [processingStage, setProcessingStage] = useState("Reading resume...");
+  const [activeAlignStep, setActiveAlignStep] = useState(0);
+  const [alignProgress, setAlignProgress] = useState(15);
+  const [alignError, setAlignError] = useState<string | null>(null);
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
 
   // Workspace Data
@@ -30,23 +38,55 @@ export default function WorkspacePage() {
   const [diffs, setDiffs] = useState<BulletChange[]>([]);
   const [requirements, setRequirements] = useState<JDRequirement[]>([]);
   const [rawLatex, setRawLatex] = useState<string>("");
+  const [jdText, setJdText] = useState<string>("");
 
   useEffect(() => {
-    const session = loadUserSession();
-    if (session.candidateName && session.candidateName !== "Candidate") {
-      setCandidateName(session.candidateName);
+    const syncSession = () => {
+      const session = loadUserSession();
+      setCandidateName(session.candidateName || "Candidate");
       setCandidateEmail(session.candidateEmail || "candidate@example.com");
-    }
-    if (session.targetRole) {
-      setTargetRole(session.targetRole);
-    }
-    if (session.targetCompany) {
-      setTargetCompany(session.targetCompany);
-    }
-    if (session.rawResumeText) {
-      setRawLatex(session.rawResumeText);
-    }
+      setTargetRole(session.targetRole || "Target Role");
+      setTargetCompany(session.targetCompany || "");
+      setRawLatex(session.rawResumeText || "");
+      setJdText(session.targetJdText || "");
+      if (!session.diffs || session.diffs.length === 0) {
+        setDiffs([]);
+      }
+      if (!session.requirements || session.requirements.length === 0) {
+        setRequirements([]);
+      }
+    };
+
+    syncSession();
+    window.addEventListener("slang_session_updated", syncSession);
+    window.addEventListener("tailorai_session_updated", syncSession);
+    return () => {
+      window.removeEventListener("slang_session_updated", syncSession);
+      window.removeEventListener("tailorai_session_updated", syncSession);
+    };
   }, []);
+
+  const handleClearWorkspace = async () => {
+    if (!confirm("Are you sure you want to clear your current workspace draft and all cached session data?")) {
+      return;
+    }
+    clearUserSession();
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      await fetch(`${apiUrl}/me/data`, { method: "DELETE" });
+    } catch {
+      // client-side purge succeeds
+    }
+    setCandidateName("Candidate");
+    setCandidateEmail("candidate@example.com");
+    setTargetRole("Target Role");
+    setTargetCompany("");
+    setRawLatex("");
+    setJdText("");
+    setDiffs([]);
+    setRequirements([]);
+    setCurrentStep(1);
+  };
 
   const handleOpenEvidenceModal = () => {
     setEvidenceModalOpen(true);
@@ -77,22 +117,35 @@ export default function WorkspacePage() {
     jdText: string;
     mode: "Same Field" | "Career Pivot" | "Entry Level";
   }) => {
+    if (!file) {
+      alert("Please upload your master resume (.tex or .pdf) before generating a tailored draft.");
+      return;
+    }
+
+    if (!jdText || jdText.trim().length < 30) {
+      alert("Please paste a realistic target Job Description with role requirements (minimum 30 characters).");
+      return;
+    }
+
     setIsProcessing(true);
     setProcessingStage("Reading resume...");
+    setJdText(jdText);
+
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
     try {
-      let activeResumeId = "master_default";
+      let activeResumeId = "";
       let extractedName = candidateName;
       let extractedEmail = candidateEmail;
       let returnedLatex = rawLatex;
 
-      // 1. Upload Resume if file provided
+      // 1. Upload Resume (required)
       if (file) {
         setProcessingStage("Parsing LaTeX AST & verifying layout budget...");
         const formData = new FormData();
         formData.append("file", file);
 
-        const resumeRes = await fetch("http://localhost:8000/resumes", {
+        const resumeRes = await fetch(`${API_BASE}/resumes`, {
           method: "POST",
           body: formData,
         });
@@ -108,6 +161,17 @@ export default function WorkspacePage() {
           setCandidateEmail(extractedEmail);
           setRawLatex(returnedLatex);
         }
+      } else if (rawLatex && rawLatex.trim()) {
+        const formData = new FormData();
+        formData.append("raw_latex", rawLatex);
+        const resumeRes = await fetch(`${API_BASE}/resumes`, {
+          method: "POST",
+          body: formData,
+        });
+        if (resumeRes.ok) {
+          const resData = await resumeRes.json();
+          activeResumeId = resData.id;
+        }
       }
 
       // 2. Analyze Job Description
@@ -115,7 +179,7 @@ export default function WorkspacePage() {
       const jdForm = new FormData();
       jdForm.append("raw_text", jdText);
 
-      const jdRes = await fetch("http://localhost:8000/jds", {
+      const jdRes = await fetch(`${API_BASE}/jds`, {
         method: "POST",
         body: jdForm,
       });
@@ -164,13 +228,36 @@ export default function WorkspacePage() {
           : "Fresher or internship"
       );
 
-      const jobRes = await fetch("http://localhost:8000/tailor-jobs", {
+      const jobRes = await fetch(`${API_BASE}/tailor-jobs`, {
         method: "POST",
         body: tailorForm,
       });
 
       if (jobRes.ok) {
         const jobData = await jobRes.json();
+        
+        // Update requirements with true semantic match classifications from backend
+        if (jobData.requirements && Array.isArray(jobData.requirements) && jobData.requirements.length > 0) {
+          const matchedJobReqs: JDRequirement[] = jobData.requirements.map((r: any) => ({
+            id: r.id,
+            text: r.text,
+            category: r.category === "Preferred" ? "Preferred" : "Essential",
+            status:
+              r.classification === "Direct"
+                ? "direct"
+                : r.classification === "Transferable"
+                ? "transferable"
+                : "missing",
+            linkedEvidenceId: r.matched_evidence_id,
+            note:
+              r.notes ||
+              (r.classification === "Missing"
+                ? "Left out of resume to keep it 100% truthful."
+                : undefined),
+          }));
+          setRequirements(matchedJobReqs);
+        }
+
         const mappedDiffs: BulletChange[] = (jobData.diffs || []).map(
           (d: any) => ({
             id: d.id,
@@ -202,7 +289,7 @@ export default function WorkspacePage() {
       // Transition smoothly to Step 2
       setCurrentStep(2);
     } catch (err) {
-      console.error("Tailor job failed:", err);
+      console.warn("Tailor backend unavailable, using deterministic fallbacks:", err);
       // Move to step 2 with deterministic fallbacks
       setCurrentStep(2);
     } finally {
@@ -217,117 +304,128 @@ export default function WorkspacePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-surface text-ink selection:bg-accent selection:text-white">
-      <FrostedNav />
+      {currentStep !== 2 && <FrostedNav />}
 
       {/* Linear 3-Step Workspace Progress Bar */}
-      <header className="sticky top-[52px] z-30 h-12 bg-canvas/80 backdrop-blur-md border-b border-hairline px-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold tracking-tight text-[15px] text-ink">
-            Workspace
-          </span>
-          <span className="text-ink-muted text-xs px-2 py-0.5 rounded-pill bg-surface border border-hairline">
-            Strict Fact Anchoring
-          </span>
-        </div>
-
-        {/* Centered 3-Step Progress Indicator */}
-        <nav
-          aria-label="Workspace progress"
-          className="flex items-center gap-2 text-[13px]"
-        >
-          {/* Step 1 */}
-          <button
-            type="button"
-            onClick={() => setCurrentStep(1)}
-            className={`flex items-center gap-1.5 transition-colors ${
-              currentStep === 1
-                ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
-                : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            {currentStep > 1 ? (
-              <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-semibold">
-                ✓
-              </span>
-            ) : (
-              <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
-                1
-              </span>
-            )}
-            1. Resume & Job
-          </button>
-
-          <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
-
-          {/* Step 2 */}
-          <button
-            type="button"
-            onClick={() => {
-              if (currentStep > 2) setCurrentStep(2);
-            }}
-            className={`flex items-center gap-1.5 transition-colors ${
-              currentStep === 2
-                ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
-                : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            {currentStep > 2 ? (
-              <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-semibold">
-                ✓
-              </span>
-            ) : (
-              <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
-                2
-              </span>
-            )}
-            2. Review Changes
-          </button>
-
-          <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
-
-          {/* Step 3 */}
-          <span
-            className={`flex items-center gap-1.5 ${
-              currentStep === 3
-                ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
-                : "text-ink-muted"
-            }`}
-          >
-            <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
-              3
+      {currentStep !== 2 && (
+        <header className="sticky top-12 md:top-[48px] z-30 h-12 bg-canvas/80 backdrop-blur-md border-b border-hairline px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold tracking-tight text-[15px] text-ink">
+              Workspace
             </span>
-            3. Download
-          </span>
-        </nav>
+          </div>
 
-        <div className="hidden sm:block text-[12px] text-ink-muted">
-          Target: <strong className="font-medium text-ink">{targetRole}</strong>
-        </div>
-      </header>
-
-      {/* Main Workspace Area */}
-      <main className="flex-1 max-w-[1240px] w-full mx-auto px-4 sm:px-6 py-8 pb-28">
-        {/* Calm Step Checklist Loading Overlay */}
-        {isProcessing && (
-          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-canvas border border-hairline rounded-card shadow-paper p-8 max-w-[420px] w-full text-center space-y-4">
-              <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin mx-auto" />
-              <div>
-                <h3 className="text-[17px] font-semibold text-ink">
-                  Analyzing & Aligning Draft
-                </h3>
-                <p className="text-[13px] text-accent mt-1 font-medium">
-                  {processingStage}
-                </p>
-              </div>
-              <div className="pt-2 text-[11px] text-ink-muted space-y-1">
-                <p>• Extracting AST content slots</p>
-                <p>• Enforcing per-bullet character budgets</p>
-                <p>• Validating 100% of claims against Evidence Bank</p>
-              </div>
+          {/* Mobile Step Indicator (Below md): 'Step X of 3' with thin progress bar */}
+          <div className="md:hidden flex flex-col items-center justify-center">
+            <span className="text-[12px] font-medium text-ink">
+              Step {currentStep} of 3
+            </span>
+            <div className="w-20 h-1 bg-hairline/60 rounded-full overflow-hidden mt-1">
+              <div
+                className="h-full bg-accent transition-all duration-300 rounded-full"
+                style={{ width: `${(currentStep / 3) * 100}%` }}
+              />
             </div>
           </div>
-        )}
+
+          {/* Centered Desktop 3-Step Progress Indicator (md and up) */}
+          <nav
+            aria-label="Workspace progress"
+            className="hidden md:flex items-center gap-2 text-[13px]"
+          >
+            {/* Step 1 */}
+            <button
+              type="button"
+              onClick={() => setCurrentStep(1)}
+              className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
+                currentStep === 1
+                  ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
+                  : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              {currentStep > 1 ? (
+                <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-semibold">
+                  ✓
+                </span>
+              ) : (
+                <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
+                  1
+                </span>
+              )}
+              1. Resume & Job
+            </button>
+
+            <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
+
+            {/* Step 2 */}
+            <button
+              type="button"
+              onClick={() => {
+                if (currentStep > 2) setCurrentStep(2);
+              }}
+              className="flex items-center gap-1.5 transition-colors text-ink-muted hover:text-ink cursor-pointer"
+            >
+              {currentStep > 2 ? (
+                <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-semibold">
+                  ✓
+                </span>
+              ) : (
+                <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
+                  2
+                </span>
+              )}
+              2. Review Changes
+            </button>
+
+            <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
+
+            {/* Step 3 */}
+            <span
+              className={`flex items-center gap-1.5 ${
+                currentStep === 3
+                  ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
+                  : "text-ink-muted"
+              }`}
+            >
+              <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
+                3
+              </span>
+              3. Download
+            </span>
+          </nav>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:block text-[12px] text-ink-muted truncate max-w-[150px]">
+              Target: <strong className="font-medium text-ink">{targetRole}</strong>
+            </div>
+            <button
+              type="button"
+              onClick={handleClearWorkspace}
+              title="Clear all inputs and reset workspace"
+              className="text-[12px] text-ink-muted hover:text-red-500 flex items-center gap-1 transition-colors px-2.5 py-1.5 rounded-pill hover:bg-red-500/10 cursor-pointer min-h-[36px]"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Clear Data</span>
+            </button>
+          </div>
+        </header>
+      )}
+
+      {/* Main Workspace Area */}
+      <main className={`flex-1 w-full mx-auto ${currentStep === 2 ? "p-0" : "max-w-[1240px] px-4 sm:px-6 py-8 pb-28"}`}>
+        {/* Redesigned Engaging & Trustworthy Loading Modal */}
+        <DraftAligningModal
+          isOpen={isProcessing}
+          onClose={() => setIsProcessing(false)}
+          onCancel={() => setIsProcessing(false)}
+          onComplete={() => {
+            setIsProcessing(false);
+            setCurrentStep(2);
+          }}
+          autoSimulate={true}
+          totalDurationMs={14000}
+          title="Polishing your draft"
+        />
 
         {/* STEP 1: Input */}
         {currentStep === 1 && (
@@ -349,6 +447,7 @@ export default function WorkspacePage() {
             targetRole={targetRole}
             rawLatex={rawLatex}
             onContinueToDownload={handleContinueToDownload}
+            onBackToStep1={() => setCurrentStep(1)}
           />
         )}
 
@@ -361,6 +460,7 @@ export default function WorkspacePage() {
             targetCompany={targetCompany}
             reviewedChanges={diffs}
             rawLatex={rawLatex}
+            jdText={jdText}
             onStartOver={() => setCurrentStep(1)}
           />
         )}
@@ -372,6 +472,9 @@ export default function WorkspacePage() {
         onClose={() => setEvidenceModalOpen(false)}
         onAddFact={handleAddEvidenceFact}
       />
+
+      {/* Responsive Mobile Bottom Tab Bar (Visible < lg when not reviewing diffs) */}
+      {currentStep !== 2 && <MobileTabBar />}
     </div>
   );
 }

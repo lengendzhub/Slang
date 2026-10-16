@@ -71,7 +71,7 @@ export function Hero() {
             href="/studio"
             className="pill-btn pill-btn-primary px-7 py-3 text-[16px] shadow-sm"
           >
-            Launch TailorAI Studio
+            Launch Slang Studio
             <ArrowRight className="w-4 h-4" />
           </Link>
           <a
@@ -96,8 +96,8 @@ export function Hero() {
               <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
               <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
               <span className="w-3 h-3 rounded-full bg-[#27c93f]" />
-              <span className="ml-3 font-mono text-[12px] text-[var(--ink-2)]">
-                tailorai-studio // master_resume.tex → staff_distributed_systems.pdf
+              <span className="ml-3 font-mono text-[12px] text-[var(--ink-2)] truncate max-w-[170px] sm:max-w-none">
+                slang-studio // master_resume.tex → staff_distributed_systems.pdf
               </span>
             </div>
             <div className="hidden sm:flex items-center gap-2">
@@ -175,9 +175,9 @@ export function Hero() {
                 </div>
               </div>
 
-              <div className="mt-3 pt-3 border-t border-[var(--line-light)] flex items-center justify-between text-[11px] text-[var(--ink-2)]">
+              <div className="mt-3 pt-3 border-t border-[var(--line-light)] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[11px] text-[var(--ink-2)]">
                 <span>Rationale: Highlighted multi-region scaling while retaining verified 42% latency proof.</span>
-                <span className="font-semibold text-[var(--blue)]">evidence_id: ev_sec_exp_0</span>
+                <span className="font-semibold text-[var(--blue)] shrink-0">evidence_id: ev_sec_exp_0</span>
               </div>
             </div>
           </div>

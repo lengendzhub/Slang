@@ -9,7 +9,7 @@ export function BentoGrid() {
           Guaranteed Integrity
         </span>
         <h2 className="text-[32px] md:text-[38px] font-semibold tracking-tight text-ink">
-          Why TailorAI Is Safe for Your Career
+          Why Slang Is Safe for Your Career
         </h2>
         <p className="text-[16px] text-ink-muted mt-2 max-w-[560px] mx-auto">
           Unlike generic generative AI tools that hallucinate skills or break your templates, every change is strictly bounded.

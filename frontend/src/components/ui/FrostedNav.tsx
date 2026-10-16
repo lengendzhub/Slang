@@ -1,74 +1,258 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Moon, Sun } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Moon, Sun, Menu, X, ArrowRight, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function FrostedNav() {
   const [isDark, setIsDark] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // Sync and toggle theme
   useEffect(() => {
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    const savedTheme = localStorage.getItem("slang_theme");
+    if (savedTheme === "dark") {
       setIsDark(true);
       document.documentElement.classList.add("dark");
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
     }
+
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      if (typeof customEvent.detail === "boolean") {
+        setIsDark(customEvent.detail);
+      } else {
+        setIsDark(localStorage.getItem("slang_theme") === "dark");
+      }
+    };
+
+    window.addEventListener("slang_theme_changed", handleThemeChange);
+    return () => window.removeEventListener("slang_theme_changed", handleThemeChange);
   }, []);
+
+  // Track scroll position: gain hairline border after 8px of scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 8);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Lock body scroll while mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const toggleTheme = () => {
     const next = !isDark;
     setIsDark(next);
     if (next) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("slang_theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
+      localStorage.setItem("slang_theme", "light");
     }
+    window.dispatchEvent(new CustomEvent("slang_theme_changed", { detail: next }));
   };
 
   return (
-    <header className="sticky top-0 z-40 h-[52px] frosted-glass px-6 flex items-center justify-between border-b border-hairline">
-      {/* Brand Wordmark */}
-      <div className="flex items-center gap-3">
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="font-semibold text-[16px] tracking-tight text-ink">
-            TailorAI
-          </span>
-          <span className="text-[11px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-pill bg-surface border border-hairline text-ink-muted">
-            Engine
-          </span>
-        </Link>
-      </div>
+    <>
+      <header
+        className={`sticky top-0 z-40 h-12 md:h-[48px] frosted-glass px-4 sm:px-6 flex items-center justify-between transition-all duration-200 ${
+          scrolled ? "border-b border-hairline shadow-subtle" : "border-b border-transparent"
+        }`}
+      >
+        {/* Brand Wordmark & Mobile Menu Trigger */}
+        <div className="flex items-center gap-3">
+          {/* Below md: Hamburger Button (at least 44x44px touch target) */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open navigation menu"}
+            className="md:hidden w-11 h-11 -ml-2 rounded-full inline-flex items-center justify-center text-ink hover:text-accent hover:bg-surface active:scale-95 transition-all"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
 
-      {/* 3 Simple Navigation Links */}
-      <nav className="hidden md:flex items-center gap-8 text-[13px] font-normal text-ink-muted">
-        <Link href="/workspace" className="hover:text-ink transition-colors duration-fast ease-apple">
-          The Workspace
-        </Link>
-        <Link href="/library" className="hover:text-ink transition-colors duration-fast ease-apple">
-          My Library
-        </Link>
-        <Link href="/account" className="hover:text-ink transition-colors duration-fast ease-apple">
-          Account & Privacy
-        </Link>
-      </nav>
+          <Link href="/" className="flex items-center gap-2 group">
+            <span className="font-semibold text-[17px] tracking-tight text-ink">
+              Slang
+            </span>
+          </Link>
+        </div>
 
-      {/* Actions: Theme Toggle + Blue Pill CTA */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label="Toggle dark mode"
-          className="p-1.5 rounded-full text-ink-muted hover:text-ink hover:bg-surface transition-colors duration-fast ease-apple"
-        >
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </button>
+        {/* Desktop Navigation Links (md and up) */}
+        <nav className="hidden md:flex items-center gap-8 text-[13px] font-normal text-ink-muted">
+          <Link
+            href="/workspace"
+            className={`hover:text-ink transition-colors duration-fast ease-apple ${
+              pathname === "/workspace" ? "text-ink font-medium" : ""
+            }`}
+          >
+            The Workspace
+          </Link>
+          <Link
+            href="/library"
+            className={`hover:text-ink transition-colors duration-fast ease-apple ${
+              pathname === "/library" ? "text-ink font-medium" : ""
+            }`}
+          >
+            My Library
+          </Link>
+          <Link
+            href="/account"
+            className={`hover:text-ink transition-colors duration-fast ease-apple ${
+              pathname === "/account" ? "text-ink font-medium" : ""
+            }`}
+          >
+            Account & Privacy
+          </Link>
+        </nav>
 
-        <Link
-          href="/workspace"
-          className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple"
-        >
-          Tailor Your Resume
-        </Link>
-      </div>
-    </header>
+        {/* Actions: Theme Toggle + Blue Pill CTA */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label="Toggle dark mode"
+            className="w-11 h-11 sm:w-8 sm:h-8 rounded-full inline-flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface active:scale-95 transition-all cursor-pointer"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
+          <Link
+            href="/workspace"
+            className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle min-h-[36px] transition-all duration-fast ease-apple active:scale-[0.98]"
+          >
+            Tailor Your Resume
+          </Link>
+        </div>
+      </header>
+
+      {/* Full-Screen Mobile Glass Sheet (Below md) */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            ref={menuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile Navigation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.28, 0.11, 0.32, 1] }}
+            className="fixed inset-0 z-30 pt-16 px-6 pb-8 md:hidden bg-canvas/95 backdrop-blur-2xl flex flex-col justify-between"
+            style={{
+              paddingTop: "calc(var(--sat, 0px) + 4rem)",
+              paddingBottom: "calc(var(--sab, 0px) + 2rem)",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              transition={{ duration: 0.3, delay: 0.05, ease: [0.28, 0.11, 0.32, 1] }}
+              className="space-y-6"
+            >
+              <div className="border-b border-hairline pb-4 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+                  Navigation
+                </span>
+              </div>
+
+              <nav className="flex flex-col space-y-4">
+                <Link
+                  href="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
+                >
+                  <span>Home</span>
+                  <ArrowRight className="w-5 h-5 text-ink-muted" />
+                </Link>
+                <Link
+                  href="/workspace"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
+                >
+                  <span>The Workspace</span>
+                  <ArrowRight className="w-5 h-5 text-ink-muted" />
+                </Link>
+                <Link
+                  href="/library"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
+                >
+                  <span>My Library</span>
+                  <ArrowRight className="w-5 h-5 text-ink-muted" />
+                </Link>
+                <Link
+                  href="/account"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
+                >
+                  <span>Account & Privacy</span>
+                  <ArrowRight className="w-5 h-5 text-ink-muted" />
+                </Link>
+              </nav>
+            </motion.div>
+
+            {/* Bottom Actions inside Sheet */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              transition={{ duration: 0.3, delay: 0.1, ease: [0.28, 0.11, 0.32, 1] }}
+              className="pt-6 border-t border-hairline space-y-3"
+            >
+              <Link
+                href="/workspace"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full min-h-[48px] rounded-pill bg-accent text-white text-[16px] font-medium inline-flex items-center justify-center gap-2 shadow-subtle hover:bg-accent-hover transition-colors"
+              >
+                <span>Tailor Your Resume</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <p className="text-center text-[12px] text-ink-muted">
+                Zero hallucinations • Preamble & macros 100% locked
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
+

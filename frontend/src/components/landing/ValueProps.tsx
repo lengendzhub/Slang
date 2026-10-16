@@ -40,7 +40,7 @@ export function ValueProps() {
             Built to eliminate the biggest risks in AI resume tailoring.
           </h2>
           <p className="section-sub">
-            Standard AI resume generators hallucinate credentials, break LaTeX files, and invent ATS scores. TailorAI replaces guesswork with deterministic evidence verification.
+            Standard AI resume generators hallucinate credentials, break LaTeX files, and invent ATS scores. Slang replaces guesswork with deterministic evidence verification.
           </p>
         </div>
 

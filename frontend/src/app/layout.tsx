@@ -9,16 +9,17 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "TailorAI — Precision LaTeX Resume Tailoring Engine",
+  title: "Slang — Precision LaTeX Resume Tailoring Engine",
   description: "One master resume in LaTeX becomes many truthful, job-specific resumes. Verified evidence anchors, locked-down sandboxing, and zero hallucinations.",
   keywords: ["AI resume tailoring", "LaTeX resume", "ATS optimization", "Career transition", "Evidence-based resume"],
-  authors: [{ name: "TailorAI Team" }],
+  authors: [{ name: "Slang Team" }],
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover" as const,
 };
 
 export default function RootLayout({
@@ -28,6 +29,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.getItem('slang_theme') === 'dark') {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col antialiased bg-surface text-ink">
         {children}
       </body>

@@ -44,7 +44,7 @@ export function InterviewPrepTeaser() {
             If you claim it on your resume, you must defend it in the interview.
           </h2>
           <p className="section-sub">
-            Generic AI resumes get candidates shortlisted, then humiliated in interviews. TailorAI generates high-conviction interview questions and empirical talking points directly from your verified evidence bank.
+            Generic AI resumes get candidates shortlisted, then humiliated in interviews. Slang generates high-conviction interview questions and empirical talking points directly from your verified evidence bank.
           </p>
         </div>
 

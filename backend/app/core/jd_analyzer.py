@@ -31,20 +31,38 @@ class JDAnalyzer:
         
         # Detect Title
         title = "Target Professional Role"
-        for line in lines[:5]:
-            if line.lower().startswith("role:") or line.lower().startswith("title:") or line.lower().startswith("position:"):
-                title = line.split(":", 1)[1].strip()
+        for line in lines[:6]:
+            clean_l = re.sub(r'^[#*\-•\s]+', '', line).strip()
+            lower_l = clean_l.lower()
+            if lower_l.startswith("role:") or lower_l.startswith("title:") or lower_l.startswith("position:") or lower_l.startswith("job title:"):
+                title = clean_l.split(":", 1)[1].strip()
                 break
-            elif any(w in line.lower() for w in ["engineer", "manager", "developer", "analyst", "architect"]):
-                title = line
+            elif any(w in lower_l for w in ["engineer", "manager", "developer", "analyst", "architect", "specialist", "scientist", "designer", "consultant", "lead", "director"]):
+                title = clean_l
                 break
 
         # Detect Company
         company = None
-        for line in lines[:6]:
-            if line.lower().startswith("company:"):
-                company = line.split(":", 1)[1].strip()
+        for line in lines[:8]:
+            clean_l = re.sub(r'^[#*\-•\s]+', '', line).strip()
+            lower_l = clean_l.lower()
+            if lower_l.startswith("company:") or lower_l.startswith("organization:") or lower_l.startswith("employer:") or lower_l.startswith("at:"):
+                company = clean_l.split(":", 1)[1].strip()
                 break
+
+        # If company not prefixed, check if first or second line has "Role at Company" or "Company - Location"
+        if not company and len(lines) > 1:
+            for line in lines[:3]:
+                clean_l = re.sub(r'^[#*\-•\s]+', '', line).strip()
+                if " at " in clean_l:
+                    company = clean_l.split(" at ", 1)[1].split("-")[0].split(",")[0].strip()
+                    break
+                elif " — " in clean_l or " - " in clean_l:
+                    sep = " — " if " — " in clean_l else " - "
+                    cand_comp = clean_l.split(sep, 1)[0].strip()
+                    if any(w in cand_comp.lower() for w in ["technologies", "solutions", "inc", "corp", "labs", "systems", "enterprise", "stripe", "google", "meta", "amazon", "apple"]):
+                        company = cand_comp
+                        break
 
         # Detect Seniority
         seniority = "Mid-Senior"
@@ -78,6 +96,11 @@ class JDAnalyzer:
             if line.startswith(('-', '•', '*', '–')) or (len(line) > 20 and not line.endswith(':')):
                 clean_req = re.sub(r'^[-•*–\d\.]+\s*', '', line).strip()
                 if len(clean_req) < 10:
+                    continue
+                # Skip if this line is the role title or metadata header
+                if clean_req.lower() == title.lower() or (company and clean_req.lower() == company.lower()):
+                    continue
+                if any(clean_req.lower().startswith(p) for p in ["role:", "title:", "company:", "job title:", "about the company", "about the role"]):
                     continue
 
                 req_counter += 1

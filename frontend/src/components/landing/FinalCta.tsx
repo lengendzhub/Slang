@@ -32,7 +32,7 @@ export function FinalCta() {
             href="/studio"
             className="pill-btn pill-btn-primary px-8 py-3.5 text-[17px] shadow-sm"
           >
-            Launch TailorAI Studio
+            Launch Slang Studio
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link

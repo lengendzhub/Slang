@@ -24,7 +24,7 @@ export default function SignInPage() {
         <div className="w-full max-w-[420px] apple-card p-8">
           <div className="text-center mb-8">
             <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--blue)] block mb-1">
-              TailorAI Account
+              Slang Account
             </span>
             <h1 className="text-[26px] font-semibold tracking-tight text-[var(--ink)]">
               Sign In

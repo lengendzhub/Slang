@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   CheckCircle2,
   Download,
@@ -12,9 +12,11 @@ import {
   FileCheck2,
   AlertCircle,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { BulletChange } from "./SplitScreenReview";
 import { downloadResumePdf, fetchResumePdfBlobUrl } from "@/lib/downloadResumePdf";
+import { generateJdFilename } from "@/lib/filenameHelper";
 
 interface Step3ExportProps {
   candidateName: string;
@@ -23,6 +25,7 @@ interface Step3ExportProps {
   targetCompany?: string;
   reviewedChanges: BulletChange[];
   rawLatex?: string;
+  jdText?: string;
   onStartOver?: () => void;
 }
 
@@ -76,15 +79,18 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
           : c.proposedText;
 
       const escapedText = safeEscapeLatex(textToInsert);
+      const escOriginal = safeEscapeLatex(c.originalText);
 
       if (result.includes(c.originalText)) {
         result = result.replace(c.originalText, escapedText);
+      } else if (result.includes(escOriginal)) {
+        result = result.replace(escOriginal, escapedText);
       }
     }
     return result;
   }
 
-  // Fallback clean compiling LaTeX template
+  // Fallback clean compiling LaTeX template with fixed spacing
   const items =
     changes.length > 0
       ? changes
@@ -105,19 +111,19 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
   const escEmail = safeEscapeLatex(candidateEmail || "candidate@example.com");
 
   return `\\documentclass[letterpaper,10pt]{article}
-\\usepackage[margin=0.45in]{geometry}
+\\usepackage[margin=0.5in]{geometry}
 \\usepackage{latexsym,titlesec,hyperref,enumitem}
-\\titleformat{\\section}{\\vspace{-4pt}\\scshape\\raggedright\\large}{}{0em}{}[\\titlerule \\vspace{-4pt}]
-\\titlespacing{\\section}{0pt}{4pt}{2pt}
-\\setlist[itemize]{noitemsep, topsep=1pt, parsep=0pt, partopsep=0pt, leftmargin=0.15in}
-\\newcommand{\\resumeItem}[1]{\\item\\small{{#1 \\vspace{-1pt}}}}
+\\titleformat{\\section}{\\large\\scshape\\raggedright}{}{0em}{}[\\titlerule\\vspace{3pt}]
+\\titlespacing*{\\section}{0pt}{6pt}{3pt}
+\\setlist[itemize]{leftmargin=0.15in, noitemsep, topsep=1pt, parsep=0pt, partopsep=0pt}
+\\newcommand{\\resumeItem}[1]{\\item\\small{{#1}}}
 \\begin{document}
 \\begin{center}
-    \\textbf{\\Huge \\scshape ${escName}} \\\\ \\vspace{2pt}
+    {\\Huge \\scshape \\textbf{${escName}}} \\\\ \\vspace{3pt}
     \\small ${escEmail}
 \\end{center}
 \\section{Experience}
-\\begin{itemize}[leftmargin=0.15in]
+\\begin{itemize}
 ${items}
 \\end{itemize}
 \\end{document}`;
@@ -130,6 +136,7 @@ export function Step3Export({
   targetCompany = "Target Organization",
   reviewedChanges,
   rawLatex,
+  jdText,
   onStartOver,
 }: Step3ExportProps) {
   const [showInterviewPrep, setShowInterviewPrep] = useState(false);
@@ -139,8 +146,34 @@ export function Step3Export({
   const [pdfLoading, setPdfLoading] = useState(true);
   const [compileError, setCompileError] = useState<string | null>(null);
 
+  // Auto-generate clean, role-specific filename based on Job Description & candidate
+  const autoFilename = useMemo(() => {
+    return generateJdFilename({
+      candidateName,
+      targetRole,
+      targetCompany,
+      jdText,
+    });
+  }, [candidateName, targetRole, targetCompany, jdText]);
+
+  const [filename, setFilename] = useState<string>(autoFilename);
+
+  // Sync state if JD/candidate props update
+  useEffect(() => {
+    setFilename(autoFilename);
+  }, [autoFilename]);
+
+  const getEffectiveFilename = () => {
+    const raw = (filename || autoFilename).trim();
+    const withoutExt = raw.replace(/\.pdf$/i, "").replace(/\.tex$/i, "");
+    const safe = withoutExt
+      .replace(/[/\\?%*:|"<>#~`!@$^&()+={}[\];,'’]/g, "")
+      .replace(/[\s\-_]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return safe || "Tailored_Resume";
+  };
+
   const tailoredTex = buildTailoredTex(rawLatex, reviewedChanges, candidateName, candidateEmail);
-  const safeFilename = `${candidateName.toLowerCase().replace(/[^a-z0-9]/g, "_")}_tailored_resume`;
 
   // Fetch real compiled PDF from backend on mount (enforce: false for preview)
   useEffect(() => {
@@ -176,11 +209,12 @@ export function Step3Export({
   }, [tailoredTex]);
 
   const handleDownloadTex = () => {
+    const safeName = getEffectiveFilename();
     const blob = new Blob([tailoredTex], { type: "text/x-tex" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${safeFilename}.tex`;
+    a.download = `${safeName}.tex`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -188,10 +222,11 @@ export function Step3Export({
   };
 
   const handleDownloadPdf = async () => {
+    const safeName = getEffectiveFilename();
     setDownloadingPdf(true);
     setCompileError(null);
     try {
-      await downloadResumePdf(tailoredTex, safeFilename);
+      await downloadResumePdf(tailoredTex, safeName);
     } catch (err: any) {
       console.error("Download PDF error:", err);
       setCompileError(err.message || "PDF compilation failed.");
@@ -258,7 +293,7 @@ export function Step3Export({
           </div>
 
           {/* Real PDF Embed in Iframe */}
-          <div className="w-full min-h-[680px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center">
+          <div className="w-full min-h-[420px] sm:min-h-[680px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center">
             {pdfLoading && (
               <div className="flex flex-col items-center gap-2 text-[13px] text-ink-muted">
                 <Loader2 className="w-6 h-6 animate-spin text-accent" />
@@ -269,7 +304,7 @@ export function Step3Export({
             {!pdfLoading && pdfBlobUrl && (
               <iframe
                 src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                className="w-full h-[700px] rounded-xl border-0"
+                className="w-full h-[55dvh] sm:h-[700px] rounded-xl border-0"
                 title="Real Compiled LaTeX Resume PDF Preview"
               />
             )}
@@ -282,7 +317,7 @@ export function Step3Export({
                 <button
                   type="button"
                   onClick={handleDownloadTex}
-                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-pill bg-surface border border-hairline text-ink text-[12px] font-medium"
+                  className="mt-3 min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-surface border border-hairline text-ink text-[12px] font-medium"
                 >
                   <FileCode2 className="w-3.5 h-3.5" />
                   Inspect .tex Source
@@ -336,13 +371,39 @@ export function Step3Export({
 
             <hr className="border-hairline" />
 
+            {/* Auto-Renamed Filename Widget */}
+            <div className="space-y-1.5 p-3 rounded-xl bg-canvas border border-hairline">
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="font-semibold uppercase tracking-wider text-ink-muted">PDF Filename</span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-status-supported-text bg-status-supported-bg px-2 py-0.5 rounded-pill">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Auto-named from JD
+                </span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-hairline focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20 transition-all">
+                <FileText className="w-4 h-4 text-ink-muted shrink-0" />
+                <input
+                  type="text"
+                  value={filename}
+                  onChange={(e) => setFilename(e.target.value)}
+                  className="w-full bg-transparent text-[13px] font-mono text-ink placeholder:text-ink-muted/50 focus:outline-none"
+                  placeholder="Tailored_Resume"
+                  title="PDF filename derived from Job Description and candidate"
+                />
+                <span className="text-[12px] font-mono text-ink-muted shrink-0">.pdf</span>
+              </div>
+              <p className="text-[11px] text-ink-muted">
+                Formatted from target role & company. Click to customize before download.
+              </p>
+            </div>
+
             {/* Two Clear Buttons */}
             <div className="space-y-2.5">
               <button
                 type="button"
                 onClick={handleDownloadPdf}
                 disabled={downloadingPdf}
-                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[48px] flex items-center justify-center gap-2 py-3 px-5 rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple cursor-pointer disabled:opacity-50 active:scale-[0.98]"
               >
                 {downloadingPdf ? (
                   <>
@@ -360,7 +421,7 @@ export function Step3Export({
               <button
                 type="button"
                 onClick={handleDownloadTex}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-5 rounded-pill bg-surface border border-hairline text-ink text-[14px] font-medium hover:bg-canvas transition-all duration-fast ease-apple cursor-pointer"
+                className="w-full min-h-[48px] flex items-center justify-center gap-2 py-2.5 px-5 rounded-pill bg-surface border border-hairline text-ink text-[14px] font-medium hover:bg-canvas transition-all duration-fast ease-apple cursor-pointer active:scale-[0.98]"
               >
                 <FileCode2 className="w-4 h-4 text-ink-muted" />
                 Download .tex Source

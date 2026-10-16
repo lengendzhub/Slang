@@ -11,7 +11,7 @@ export async function downloadResumePdf(tex: string, name = "tailored_resume") {
   const res = await fetch(`${apiUrl}/exports/pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tex, filename: name, max_pages: 1, enforce: true }),
+    body: JSON.stringify({ tex, filename: name, max_pages: 1, enforce: true, fit: true }),
   });
 
   if (!res.ok) {
@@ -24,7 +24,8 @@ export async function downloadResumePdf(tex: string, name = "tailored_resume") {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${name}.pdf`;
+  const cleanName = name.replace(/\.pdf$/i, "");
+  a.download = `${cleanName}.pdf`;
   document.body.appendChild(a);
   a.click();
   a.remove();

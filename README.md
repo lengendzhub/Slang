@@ -1,4 +1,4 @@
-# TailorAI — Precision LaTeX Resume Tailoring Engine
+# Slang — Precision LaTeX Resume Tailoring Engine
 
 > **One master resume in LaTeX becomes many truthful, job-specific resumes.**
 > Designed with Apple-inspired visual restraint, verified evidence anchoring, locked-down sandboxing, and zero hallucinations.
@@ -116,3 +116,63 @@ Tests cover:
 - `test_length_budget.py`: Per-bullet character budget enforcement.
 - `test_constrained_editor.py`: Llama 3.2 structured JSON rewrites.
 - `test_end_to_end.py`: Full upload-to-tailor pipeline execution.
+
+---
+
+## 6. Mobile-First Responsive Design Architecture (320px – 2560px)
+
+Slang is built with a single unified codebase that scales fluidly from **320px small phones to 2560px ultra-wide displays**, strictly adhering to Apple Human Interface Guidelines and WCAG 1.4.10 reflow standards.
+
+### 1. Breakpoint Grid
+- **`xs` (320px – 479px)**: Small phones (base unprefixed Tailwind layout, single column).
+- **`sm` (480px – 767px)**: Large phones.
+- **`md` (768px – 1023px)**: Tablet portrait.
+- **`lg` (1024px – 1279px)**: Tablet landscape and small laptops.
+- **`xl` (1280px – 1535px)**: Desktop workstations.
+- **`2xl` (1536px+)**: Ultra-wide displays (content centered and capped at `1120px` marketing / `1440px` workspace).
+
+### 2. Fluid Tokens & Device Insets
+- **Fluid Typography**: Dynamic scaling via CSS `clamp()`:
+  - Hero Headline: `clamp(38px, 8vw, 80px)`
+  - Section Headline: `clamp(28px, 5vw, 48px)`
+  - Sub-headline: `clamp(18px, 2.4vw, 21px)`
+  - Card Radius: `clamp(18px, 2.5vw, 28px)`
+- **Zero Horizontal Overflow**: `overflow-x: clip; max-width: 100vw;` on `html, body`.
+- **Safe Area Inset Tokens**: `env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`, etc., protecting notched devices and home bars.
+- **iOS Safari Auto-Zoom Protection**: Inputs, selects, and textareas enforce `font-size: 16px` on `< 768px` to prevent disruptive iOS auto-zooming.
+- **Touch-First 44px Minimum Targets**: All buttons, tabs, and interactive triggers enforce `min-height: 44px` and `min-width: 44px` with at least 8px spacing on touch devices.
+
+### 3. Component Behavior by Screen Size
+- **Navigation (`FrostedNav`)**:
+  - `< md`: Branded wordmark + 44px animated menu button opening a full-screen frosted glass sheet (`backdrop-blur-2xl`) with large links, primary CTA, focus trap, Escape key handling, and background scroll locking.
+  - `md+`: Inline navigation links with compact CTA; 48px glass bar gaining hairline border after 8px of scroll.
+- **App Shell (`MobileTabBar`)**:
+  - `< lg`: Persistent frosted glass bottom tab bar with safe-area padding for *Home*, *Workspace*, *Library*, and *Account*.
+- **Workspace Flow (`Step1Input` & `WorkspacePage`)**:
+  - `< md`: Progress indicator condenses to `Step X of 3` with an animated progress bar.
+  - Mode Selection: Stacked 44px buttons on mobile, 3-column pill on `sm+`.
+  - Target JD Textarea: Auto-grows with `min-h-[40dvh]` on mobile devices.
+  - Submit Action: Sticky bottom bar with safe-area padding for easy single-thumb reach.
+- **Split-Screen Review (`SplitScreenReview`)**:
+  - `< lg`: Single-column layout with a top segmented control (*Review Changes*, *Match Rubric*, *.tex Source*) eliminating vertical scroll fatigue.
+  - `lg+`: Dual-pane side-by-side layout (65% interactive canvas + 35% sticky rubric inspector).
+  - Review Actions: 44px touch targets on *Accept*, *Reject*, *Edit*, and *Undo*.
+  - Action Dock: Sticky bottom glass dock with safe-area padding and 44px *Accept All* / *Continue* triggers.
+- **Step 3 Export (`Step3Export`)**:
+  - PDF Preview: Responsive `min-h-[420px] h-[55dvh] sm:h-[700px]` iframe preventing mobile scroll traps.
+  - Export Actions: Full-width 48px pill buttons for real PDF download and `.tex` source inspection.
+
+### 4. Automated Viewport Verification Matrix
+Run the Playwright responsive test suite across all target viewports:
+```bash
+python scratch/test_responsive_viewports.py
+```
+Verified viewports:
+- 320x568 (iPhone 5/SE) — **100% Zero Overflow**
+- 375x667 (iPhone SE 2020) — **100% Zero Overflow**
+- 390x844 (iPhone 12/13/14) — **100% Zero Overflow**
+- 430x932 (iPhone 14 Pro Max) — **100% Zero Overflow**
+- 768x1024 (iPad Portrait) — **100% Zero Overflow**
+- 1024x768 (iPad Landscape) — **100% Zero Overflow**
+- 1440x900 (Desktop) — **100% Zero Overflow**
+

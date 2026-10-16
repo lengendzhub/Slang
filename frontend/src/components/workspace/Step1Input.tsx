@@ -9,6 +9,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
+  Trash2,
+  AlertCircle,
 } from "lucide-react";
 
 interface Step1InputProps {
@@ -32,10 +34,12 @@ export function Step1Input({
   const [jdText, setJdText] = useState("");
   const [transitionMode, setTransitionMode] = useState<"Same Field" | "Career Pivot" | "Entry Level">("Career Pivot");
   const [dragActive, setDragActive] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setValidationError(null);
     }
   };
 
@@ -44,15 +48,24 @@ export function Step1Input({
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setSelectedFile(e.dataTransfer.files[0]);
+      setValidationError(null);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jdText.trim()) {
-      alert("Please paste a target Job Description to tailor against.");
+    setValidationError(null);
+
+    if (!selectedFile) {
+      setValidationError("Please upload your master resume (.tex or .pdf) first.");
       return;
     }
+
+    if (!jdText.trim() || jdText.trim().length < 30) {
+      setValidationError("Please paste a target Job Description with role requirements (minimum 30 characters).");
+      return;
+    }
+
     onGenerateDraft({
       file: selectedFile,
       jdText: jdText.trim(),
@@ -60,22 +73,7 @@ export function Step1Input({
     });
   };
 
-  const loadSampleJD = () => {
-    setJdText(`Technical Business Analyst & Systems Specialist
-Apex Enterprise Solutions
 
-Responsibilities:
-- Translate business & operational workflows into technical requirement specifications.
-- Query PostgreSQL databases and use Python scripts to extract operational data and anomaly metrics.
-- Partner with product managers and QA leads in bi-weekly sprint planning to define acceptance criteria.
-- Facilitate cross-functional communication between software engineering and executive stakeholders.
-
-Requirements:
-- 2+ years working with relational databases (SQL, data extraction).
-- Familiarity with Python scripting for data manipulation or workflow automation.
-- Proven track record translating technical constraints into clear documentation.
-- Experience with agile sprint ceremonies and user story definitions.`);
-  };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-[1120px] mx-auto space-y-8">
@@ -118,6 +116,8 @@ Requirements:
                 ? "border-accent bg-accent/5"
                 : selectedFile
                 ? "border-status-supported-text/50 bg-canvas"
+                : validationError && !selectedFile
+                ? "border-red-500/80 bg-red-500/5 ring-2 ring-red-500/20"
                 : "border-hairline bg-canvas hover:border-ink-muted/50"
             }`}
           >
@@ -147,6 +147,22 @@ Requirements:
                   <span>✓</span>
                   Template recognised • 1 page • Formatting locked
                 </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      const input = document.getElementById("resume-file-input") as HTMLInputElement;
+                      if (input) input.value = "";
+                    }}
+                    className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] font-medium text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 rounded-pill transition-colors cursor-pointer relative z-10"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Remove Selected File
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -161,10 +177,6 @@ Requirements:
                     or click to browse your files
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-surface border border-hairline text-ink-muted text-[11px]">
-                  <span>🔒</span>
-                  Formatting, preamble & macros never modified
-                </div>
               </div>
             )}
           </div>
@@ -176,25 +188,36 @@ Requirements:
             <label className="text-[12px] font-semibold uppercase tracking-wider text-ink-muted">
               Target Job Description
             </label>
-            <button
-              type="button"
-              onClick={loadSampleJD}
-              className="text-[12px] text-accent hover:underline"
-            >
-              Insert Sample JD
-            </button>
+            {jdText && (
+              <button
+                type="button"
+                onClick={() => setJdText("")}
+                className="text-[12px] text-ink-muted hover:text-red-500 transition-colors cursor-pointer"
+              >
+                Clear JD
+              </button>
+            )}
           </div>
 
           <textarea
             rows={7}
             required
             value={jdText}
-            onChange={(e) => setJdText(e.target.value)}
-            placeholder="Paste the target job description requirements, responsibilities, and qualifications..."
-            className="w-full p-4 rounded-card border border-hairline bg-canvas text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed"
+            onChange={(e) => {
+              setJdText(e.target.value);
+              if (validationError && e.target.value.trim().length >= 30) {
+                setValidationError(null);
+              }
+            }}
+            placeholder="Paste the target job description requirements, responsibilities, and qualifications (minimum 30 characters)..."
+            className={`w-full min-h-[40dvh] sm:min-h-[220px] p-4 rounded-card border bg-canvas text-[16px] sm:text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-y ${
+              validationError && (!jdText.trim() || jdText.trim().length < 30)
+                ? "border-red-500/80 ring-1 ring-red-500/20"
+                : "border-hairline"
+            }`}
           />
 
-          {/* 3-Option Segmented Control for Transition Mode */}
+          {/* Mode Selection: Stacked cards on mobile, grid from sm/md up */}
           <div className="space-y-2">
             <label className="text-[12px] font-semibold uppercase tracking-wider text-ink-muted block">
               Orientation Mode
@@ -202,7 +225,7 @@ Requirements:
             <div
               role="radiogroup"
               aria-label="Transition mode"
-              className="grid grid-cols-3 p-1 rounded-pill bg-hairline/40 border border-hairline text-center"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 p-1 rounded-2xl sm:rounded-pill bg-hairline/30 border border-hairline text-center"
             >
               {(["Same Field", "Career Pivot", "Entry Level"] as const).map((mode) => {
                 const isActive = transitionMode === mode;
@@ -213,9 +236,9 @@ Requirements:
                     role="radio"
                     aria-checked={isActive}
                     onClick={() => setTransitionMode(mode)}
-                    className={`py-2 rounded-pill text-[12px] font-medium transition-all duration-fast ease-apple ${
+                    className={`min-h-[44px] py-2 px-3 rounded-xl sm:rounded-pill text-[13px] font-medium transition-all duration-fast ease-apple flex items-center justify-center cursor-pointer ${
                       isActive
-                        ? "bg-canvas text-ink shadow-subtle"
+                        ? "bg-canvas text-ink shadow-subtle border sm:border-0 border-hairline"
                         : "text-ink-muted hover:text-ink"
                     }`}
                   >
@@ -233,12 +256,23 @@ Requirements:
         </div>
       </div>
 
-      {/* Primary Submit Button */}
-      <div className="pt-4 text-center">
+      {/* Primary Submit Button with sticky bottom bar on mobile */}
+      <div className="sticky bottom-14 sm:static z-10 bg-surface/90 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-3 sm:p-0 pt-4 border-t sm:border-0 border-hairline -mx-4 sm:mx-0 text-center space-y-3">
+        {validationError && (
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[13px] font-medium flex items-center justify-center gap-2 max-w-[580px] mx-auto text-center">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+            <span>{validationError}</span>
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={isProcessing}
-          className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-pill bg-accent text-white text-[15px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple cursor-pointer disabled:opacity-50"
+          disabled={!selectedFile || jdText.trim().length < 30 || isProcessing}
+          className={`w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-pill text-[15px] font-medium shadow-subtle transition-all duration-fast ease-apple ${
+            selectedFile && jdText.trim().length >= 30 && !isProcessing
+              ? "bg-accent text-white hover:bg-accent-hover cursor-pointer active:scale-[0.98]"
+              : "bg-hairline text-ink-muted/50 cursor-not-allowed opacity-60"
+          }`}
         >
           {isProcessing ? (
             <>

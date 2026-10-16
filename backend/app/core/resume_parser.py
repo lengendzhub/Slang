@@ -130,6 +130,20 @@ class ResumeParser:
                     verified=True
                 ))
 
+            if not extracted_items:
+                # Capture unbulleted section text (e.g. Summary paragraphs, inline skills) into evidence bank
+                clean_sec = re.sub(r'\\[a-zA-Z]+\*?(?:\[[^\]]*\])?(?:\{([^}]*)\})?', r'\1 ', section_raw)
+                clean_sec = re.sub(r'[{}\\$%&#^_~]', ' ', clean_sec)
+                lines = [l.strip() for l in clean_sec.split('\n') if len(l.strip()) > 15]
+                for p_idx, p_text in enumerate(lines):
+                    evidence_bank.append(EvidenceRecord(
+                        id=f"ev_{section_id}_p{p_idx}",
+                        source="master_resume",
+                        raw_text=p_text,
+                        context=f"Section: {section_title}",
+                        verified=True
+                    ))
+
             section_obj = ResumeSection(
                 id=section_id,
                 title=section_title,

@@ -45,7 +45,7 @@ export function TrustSection() {
       badge: "Zero-Hallucination Law",
       icon: XCircle,
       description:
-        "Essential or preferred job requirements for which you have zero verified background. Standard AI engines invent experience here; TailorAI explicitly isolates them in your Gap Report.",
+        "Essential or preferred job requirements for which you have zero verified background. Standard AI engines invent experience here; Slang explicitly isolates them in your Gap Report.",
       rules: [
         "Never written into your LaTeX document",
         "Included in the pre-interview skill gap checklist",
@@ -139,7 +139,7 @@ export function TrustSection() {
             <strong className="text-[var(--ink)] font-semibold block mb-0.5">
               Documented Fit Rubric vs. ATS Myth
             </strong>
-            TailorAI will never promise an "ATS Pass Rate" or "Shortlist Probability". Employers configure ATS filters differently, and keyword stuffing does not guarantee human interviews. Instead, our fit score reflects pure requirement and evidence coverage according to a transparent mathematical rubric.
+            Slang will never promise an "ATS Pass Rate" or "Shortlist Probability". Employers configure ATS filters differently, and keyword stuffing does not guarantee human interviews. Instead, our fit score reflects pure requirement and evidence coverage according to a transparent mathematical rubric.
           </div>
         </div>
       </div>

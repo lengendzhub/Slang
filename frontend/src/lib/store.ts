@@ -66,12 +66,13 @@ export interface UserSessionState {
   fitScore: number;
 }
 
-const STORAGE_KEY = "tailorai_user_session_v1";
+const STORAGE_KEY = "slang_user_session_v1";
+const LEGACY_STORAGE_KEY = "tailorai_user_session_v1";
 
 export function loadUserSession(): UserSessionState {
   if (typeof window !== "undefined") {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (saved) {
         return JSON.parse(saved);
       }
@@ -106,6 +107,7 @@ export function saveUserSession(session: Partial<UserSessionState>) {
       const current = loadUserSession();
       const updated = { ...current, ...session };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("slang_session_updated"));
       window.dispatchEvent(new Event("tailorai_session_updated"));
     } catch (e) {
       console.error("Error saving user session to localStorage:", e);
@@ -116,7 +118,13 @@ export function saveUserSession(session: Partial<UserSessionState>) {
 export function clearUserSession() {
   if (typeof window !== "undefined") {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      const savedTheme = localStorage.getItem("slang_theme");
+      localStorage.clear();
+      sessionStorage.clear();
+      if (savedTheme) {
+        localStorage.setItem("slang_theme", savedTheme);
+      }
+      window.dispatchEvent(new Event("slang_session_updated"));
       window.dispatchEvent(new Event("tailorai_session_updated"));
     } catch (e) {
       console.error("Error clearing user session:", e);

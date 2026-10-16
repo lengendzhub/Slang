@@ -73,8 +73,8 @@ class FactValidator:
         rewrite_nums = set(re.findall(r'\b\d+[%xXmMkK]?\b', rewrite_lower))
         
         unverified_metrics = rewrite_nums - anchor_nums
-        suspicious = [m for m in unverified_metrics if m not in ["1", "2", "3", "4", "5", "10m+"]]
-        if len(suspicious) > 2:
+        suspicious = [m for m in unverified_metrics if m not in ["1", "2", "3", "4", "5"]]
+        if len(suspicious) > 0:
             return False, f"REJECTED: Unverified metrics introduced: {suspicious}"
 
         return True, "VALIDATED: Anchored to verified evidence."

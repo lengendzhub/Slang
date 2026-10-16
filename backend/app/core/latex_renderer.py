@@ -16,7 +16,8 @@ class LatexRenderer:
         self.parsed_resume = parsed_resume
 
     def render(self, diffs: List[DiffItem]) -> str:
-        # Start with original full LaTeX string
+        from app.core.render_resume import tex
+
         rendered = self.parsed_resume.raw_latex
 
         # Apply only accepted or user-edited diffs
@@ -26,10 +27,13 @@ class LatexRenderer:
 
             target_replacement = diff.edited_text if diff.decision == DiffDecision.EDITED and diff.edited_text else diff.rewritten_text
             original = diff.original_text.strip()
+            escaped_replacement = tex(target_replacement)
 
-            # Replace exact occurrence of original within content slot
+            # Replace exact occurrence of original or escaped original within content slot
             if original in rendered:
-                rendered = rendered.replace(original, target_replacement, 1)
+                rendered = rendered.replace(original, escaped_replacement, 1)
+            elif tex(original) in rendered:
+                rendered = rendered.replace(tex(original), escaped_replacement, 1)
 
         return rendered
 

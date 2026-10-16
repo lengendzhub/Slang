@@ -46,7 +46,7 @@ export function SiblingsSection() {
             One master resume. An organized tree of truthful siblings.
           </h2>
           <p className="section-sub">
-            Never duplicate resumes into messy folders. TailorAI connects every child resume back to your single master .tex file. When your master gains new experience, siblings flag updates—never overwriting your tailored versions silently.
+            Never duplicate resumes into messy folders. Slang connects every child resume back to your single master .tex file. When your master gains new experience, siblings flag updates—never overwriting your tailored versions silently.
           </p>
         </div>
 

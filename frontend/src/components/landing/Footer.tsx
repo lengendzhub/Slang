@@ -6,12 +6,12 @@ import { Shield, Lock, FileText, Trash2 } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-[var(--bg)] border-t border-[var(--line-light)] text-[12px] text-[var(--ink-2)] py-14">
-      <div className="max-w-[1280px] mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 pb-12 border-b border-[var(--line-light)]">
-          <div className="col-span-2">
+    <footer className="bg-[var(--bg)] border-t border-[var(--line-light)] text-[12px] text-[var(--ink-2)] py-12 pb-24 md:pb-14">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 pb-12 border-b border-[var(--line-light)]">
+          <div className="sm:col-span-2">
             <span className="font-semibold text-[15px] text-[var(--ink)] block mb-2">
-              TailorAI Precision Engine
+              Slang Precision Engine
             </span>
             <p className="max-w-[320px] leading-relaxed text-[var(--ink-2)] mb-4">
               Evidence-anchored resume tailoring for LaTeX-native engineers, managers, and career switchers.
@@ -54,9 +54,9 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 TailorAI Engineering Group. Built for precision and uncompromised truth.</p>
-          <div className="flex items-center gap-6">
+        <div className="pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p>© 2026 Slang Engineering Group. Built for precision and uncompromised truth.</p>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <Link href="/settings" className="hover:text-[var(--ink)]">Privacy Policy</Link>
             <Link href="/settings" className="hover:text-[var(--ink)]">Terms of Service</Link>
             <Link href="/settings" className="hover:text-[var(--ink)]">Data Retention Rubric</Link>
