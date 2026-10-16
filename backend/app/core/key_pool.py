@@ -50,6 +50,8 @@ class LLMKeyPool:
 
         # Load keys from environment variable (comma or newline separated)
         raw_keys = os.getenv(env_var_name, "")
+        if not raw_keys and env_var_name == "GROQ_API_KEYS":
+            raw_keys = os.getenv("GROQ_API_KEY", "")
         if raw_keys:
             keys = [k.strip() for k in raw_keys.replace("\n", ",").split(",") if k.strip()]
             self.load_keys(keys)

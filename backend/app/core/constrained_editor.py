@@ -1,4 +1,5 @@
 import json
+import os
 import urllib.request
 import urllib.error
 import re
@@ -15,19 +16,21 @@ class ConstrainedEditor:
     4. Per-bullet character length budgets.
     
     Load-balances across 5+ API keys (e.g. Groq, OpenAI) with automatic
-    429 circuit-breaking, falling back seamlessly to local Ollama (localhost:11434).
+    429 circuit-breaking, falling back seamlessly to local or remote Ollama (localhost:11434).
     """
 
     def __init__(
         self,
-        ollama_url: str = "http://localhost:11434",
-        model_name: str = "llama3.2",
+        ollama_url: Optional[str] = None,
+        model_name: Optional[str] = None,
         timeout: int = 5,
-        groq_model: str = "llama-3.3-70b-versatile"
+        groq_model: Optional[str] = None
     ):
-        self.ollama_url = ollama_url.rstrip("/")
-        self.model_name = model_name
-        self.groq_model = groq_model
+        self.ollama_url = (
+            ollama_url or os.getenv("OLLAMA_URL") or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434"
+        ).rstrip("/")
+        self.model_name = model_name or os.getenv("OLLAMA_MODEL") or "llama3.2"
+        self.groq_model = groq_model or os.getenv("GROQ_MODEL") or "llama-3.3-70b-versatile"
         self.timeout = timeout
         self._checked_availability = False
         self._cached_model = None
