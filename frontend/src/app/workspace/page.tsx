@@ -127,6 +127,7 @@ export default function WorkspacePage() {
       return;
     }
 
+    const startTime = Date.now();
     setIsProcessing(true);
     setProcessingStage("Reading resume...");
     setJdText(jdText);
@@ -286,6 +287,13 @@ export default function WorkspacePage() {
         });
       }
 
+      // Calibrated pacing: gives user 3.5s to see the 4 pipeline stages verify cleanly
+      const elapsed = Date.now() - startTime;
+      const MIN_DISPLAY_MS = 3500;
+      if (elapsed < MIN_DISPLAY_MS) {
+        await new Promise((resolve) => setTimeout(resolve, MIN_DISPLAY_MS - elapsed));
+      }
+
       // Transition smoothly to Step 2
       setCurrentStep(2);
     } catch (err) {
@@ -423,7 +431,7 @@ export default function WorkspacePage() {
             setCurrentStep(2);
           }}
           autoSimulate={true}
-          totalDurationMs={14000}
+          totalDurationMs={3500}
           title="Polishing your draft"
         />
 

@@ -199,3 +199,17 @@ nextjs-portal {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* Calibrated smooth loader spin (calm 2s rotation instead of frantic 1s) */
+@keyframes spin-calm {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin-calm 2s linear infinite !important;
+}
