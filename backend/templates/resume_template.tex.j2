@@ -1,0 +1,116 @@
+\documentclass[letterpaper,10pt]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{latexsym}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tabularx}
+
+% Clean section formatting with fixed spacing (no strikethrough over text)
+\titleformat{\section}{
+  \large\scshape\raggedright
+}{}{0em}{}[\titlerule\vspace{3pt}]
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+
+% Tight itemize spacing for single-page budget
+\setlist[itemize]{leftmargin=0.15in, noitemsep, topsep=1pt, parsep=0pt, partopsep=0pt}
+\newcommand{\resumeItem}[1]{\item\small{{#1}}}
+
+\pagestyle{empty}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\begin{document}
+
+% ---------- HEADER ----------
+\begin{center}
+    {\Huge \scshape \textbf{\VAR{header.name|tex}}} \\ \vspace{3pt}
+    \small \VAR{header.contact_line}
+\end{center}
+
+% ---------- SUMMARY ----------
+\BLOCK{if summary}
+\section{Summary}
+\small{\VAR{summary|tex}}\par
+\BLOCK{endif}
+
+% ---------- EXPERIENCE ----------
+\BLOCK{if experience}
+\section{Experience}
+\BLOCK{for job in experience}
+\vspace{2pt}
+\begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}
+  \textbf{\VAR{job.role|tex}} & \small{\VAR{job.dates|tex}} \\
+  \textsl{\small{\VAR{job.company|tex}}} \BLOCK{if job.location} \textbar\ \small{\textsl{\VAR{job.location|tex}}}\BLOCK{endif} & \\
+\end{tabular*}\par\vspace{-3pt}
+\BLOCK{if job.bullets}
+\begin{itemize}
+\BLOCK{for b in job.bullets}
+  \resumeItem{\VAR{b.text|tex}}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\BLOCK{endfor}
+\BLOCK{endif}
+
+% ---------- PROJECTS ----------
+\BLOCK{if projects}
+\section{Projects}
+\BLOCK{for proj in projects}
+\vspace{2pt}
+\begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}
+  \textbf{\VAR{proj.name|tex}} \BLOCK{if proj.technologies} \textbar\ \textsl{\small{\VAR{proj.technologies|tex}}}\BLOCK{endif} & \small{\VAR{proj.dates|tex}} \\
+\end{tabular*}\par\vspace{-3pt}
+\BLOCK{if proj.bullets}
+\begin{itemize}
+\BLOCK{for b in proj.bullets}
+  \resumeItem{\VAR{b.text|tex}}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+\BLOCK{endfor}
+\BLOCK{endif}
+
+% ---------- EDUCATION ----------
+\BLOCK{if education}
+\section{Education}
+\BLOCK{for edu in education}
+\vspace{2pt}
+\begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}
+  \textbf{\VAR{edu.institution|tex}} & \small{\VAR{edu.dates|tex}} \\
+  \textsl{\small{\VAR{edu.degree|tex}}} \BLOCK{if edu.location} \textbar\ \small{\textsl{\VAR{edu.location|tex}}}\BLOCK{endif} & \\
+\end{tabular*}\par
+\BLOCK{if edu.details}
+\vspace{1pt}\small{\VAR{edu.details|tex}}\par
+\BLOCK{endif}
+\BLOCK{endfor}
+\BLOCK{endif}
+
+% ---------- TECHNICAL SKILLS ----------
+\BLOCK{if skills}
+\section{Technical Skills}
+\begin{itemize}
+\BLOCK{if skills is mapping}
+\BLOCK{for cat, items in skills.items()}
+  \resumeItem{\textbf{\VAR{cat|tex}:} \VAR{(items if items is string else items|join(', '))|tex}}
+\BLOCK{endfor}
+\BLOCK{elif skills is iterable}
+\BLOCK{for item in skills}
+  \resumeItem{\VAR{item|tex}}
+\BLOCK{endfor}
+\BLOCK{endif}
+\end{itemize}
+\BLOCK{endif}
+
+% ---------- ACHIEVEMENTS / OTHER ----------
+\BLOCK{if achievements}
+\section{Achievements}
+\begin{itemize}
+\BLOCK{for ach in achievements}
+  \resumeItem{\VAR{(ach if ach is string else ach.text)|tex}}
+\BLOCK{endfor}
+\end{itemize}
+\BLOCK{endif}
+
+\end{document}

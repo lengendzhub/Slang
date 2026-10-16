@@ -1,0 +1,88 @@
+{
+  "header": {
+    "name": "Marimuthu",
+    "email": "marimuthu112005@gmail.com",
+    "phone": "+91 98765 43210",
+    "location": "Thoothukudi, Tamil Nadu",
+    "links": [
+      {
+        "url": "https://linkedin.com/in/marimuthu11",
+        "label": "linkedin.com/in/marimuthu11"
+      },
+      {
+        "url": "https://github.com/lengendzhub",
+        "label": "github.com/lengendzhub"
+      }
+    ]
+  },
+  "summary": "Motivated Computer Science Engineering student with strong practical foundations in full-stack development, Python, Flutter, and automated testing tools. Builder of CROPIC, an AI-driven crop damage assessment solution.",
+  "experience": [
+    {
+      "company": "PandaCore Technology",
+      "role": "Full Stack Development Intern",
+      "dates": "July 2024 -- Present",
+      "location": "Remote",
+      "bullets": [
+        {
+          "text": "Engineered responsive frontend interfaces using Flutter and React with modular state management.",
+          "evidence_id": "ev_exp_1"
+        },
+        {
+          "text": "Developed backend microservices in Python with PostgreSQL database schema optimization.",
+          "evidence_id": "ev_exp_2"
+        },
+        {
+          "text": "Automated API testing pipelines reducing regression test cycles by 35%.",
+          "evidence_id": "ev_exp_3"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "CROPIC -- AI-Assisted Crop Damage Assessment",
+      "technologies": "Python, Flutter, Deep Learning",
+      "dates": "2025 -- 2026",
+      "bullets": [
+        {
+          "text": "Built deep-learning computer vision pipeline classifying crop diseases with 94% validation accuracy.",
+          "evidence_id": "ev_proj_1"
+        },
+        {
+          "text": "Integrated Flutter mobile client with cloud endpoints for instant offline-first inference.",
+          "evidence_id": "ev_proj_2"
+        }
+      ]
+    },
+    {
+      "name": "Test Automation Suite",
+      "technologies": "Python, Postman, CI/CD",
+      "dates": "2025",
+      "bullets": [
+        {
+          "text": "Created automated test harness generating unit tests, Postman collections, and edge cases.",
+          "evidence_id": "ev_proj_3"
+        },
+        {
+          "text": "Reduced developer onboarding time and bug leakage across repository modules.",
+          "evidence_id": "ev_proj_4"
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Anna University Affiliated Institution",
+      "degree": "B.E. in Computer Science and Engineering",
+      "dates": "2023 -- 2027",
+      "location": "Tamil Nadu, India"
+    }
+  ],
+  "skills": {
+    "Languages": "Python, C++, Java, Dart, JavaScript, SQL",
+    "Frameworks & Tools": "Flutter, React, FastAPI, Git, Power BI, Docker, Linux"
+  },
+  "achievements": [
+    "Finalist in regional hackathons for AI and mobile application development."
+  ]
+}

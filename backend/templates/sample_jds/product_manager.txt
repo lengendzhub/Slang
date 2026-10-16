@@ -1,0 +1,24 @@
+Role: Technical Product Manager (Data & Developer Platforms)
+Company: DataPulse Technologies
+Location: Hybrid / New York, NY
+
+About the Role:
+DataPulse is looking for a Technical Product Manager to bridge the gap between engineering teams and enterprise customers. You will drive roadmap planning, feature scoping, and customer discovery for our real-time developer APIs and SQL query optimization platform.
+
+Key Responsibilities:
+- Own the product lifecycle from customer problem discovery to release, sprint planning, and telemetry tracking.
+- Translate complex distributed systems capabilities and API designs into customer-facing PRDs.
+- Partner closely with engineering leads on architectural tradeoffs and delivery milestones.
+- Act as the voice of technical users and developer communities.
+
+Mandatory / Essential Requirements:
+- 3+ years experience in technical product management or a background as a software engineer transitioning into product.
+- Strong technical fluency: ability to read code, understand database schemas, and discuss API contracts with staff engineers.
+- Proven ability to define clear PRDs, user stories, and acceptance criteria.
+
+Transferable / Adjacent Experience:
+- Engineering mentorship, cross-functional project leadership, or technical community stewardship.
+- Building developer tools, open-source projects, or developer documentation.
+
+Preferred:
+- Experience with SQL optimization tools, distributed caching, or cloud infrastructure.

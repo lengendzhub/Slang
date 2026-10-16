@@ -21,6 +21,8 @@ HERE = Path(__file__).resolve().parent
 
 # Support multiple locations for templates
 TEMPLATE_SEARCH_DIRS = [
+    Path("templates"),
+    HERE.parent.parent / "templates",
     HERE,
     HERE / "templates",
     HERE.parent / "templates",
