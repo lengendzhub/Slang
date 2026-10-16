@@ -52,6 +52,34 @@ class LLMKeyPool:
         raw_keys = os.getenv(env_var_name, "")
         if not raw_keys and env_var_name == "GROQ_API_KEYS":
             raw_keys = os.getenv("GROQ_API_KEY", "")
+
+        # Auto-detect from .env files if not in os.environ
+        if not raw_keys:
+            candidate_paths = [
+                os.path.join(os.getcwd(), ".env"),
+                os.path.join(os.getcwd(), "backend", ".env"),
+                os.path.join(os.path.dirname(__file__), "..", "..", ".env"),
+            ]
+            for p in candidate_paths:
+                if os.path.exists(p):
+                    try:
+                        with open(p, "r", encoding="utf-8") as f:
+                            for line in f:
+                                line = line.strip()
+                                if line.startswith("#") or "=" not in line:
+                                    continue
+                                k, v = line.split("=", 1)
+                                k = k.strip()
+                                v = v.strip().strip("'\"")
+                                if k in (env_var_name, "GROQ_API_KEY", "GROQ_API_KEYS"):
+                                    raw_keys = v
+                                    os.environ[k] = v
+                                    break
+                    except Exception:
+                        pass
+                if raw_keys:
+                    break
+
         if raw_keys:
             keys = [k.strip() for k in raw_keys.replace("\n", ",").split(",") if k.strip()]
             self.load_keys(keys)

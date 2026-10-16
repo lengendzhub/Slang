@@ -30,7 +30,7 @@ class ConstrainedEditor:
             ollama_url or os.getenv("OLLAMA_URL") or os.getenv("OLLAMA_BASE_URL") or "http://localhost:11434"
         ).rstrip("/")
         self.model_name = model_name or os.getenv("OLLAMA_MODEL") or "llama3.2"
-        self.groq_model = groq_model or os.getenv("GROQ_MODEL") or "llama-3.3-70b-versatile"
+        self.groq_model = groq_model or os.getenv("GROQ_MODEL") or "qwen/qwen3.8-27b"
         self.timeout = timeout
         self._checked_availability = False
         self._cached_model = None
@@ -102,7 +102,8 @@ class ConstrainedEditor:
                     data=json.dumps(body).encode("utf-8"),
                     headers={
                         "Authorization": f"Bearer {key}",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        "User-Agent": "Slang-Resume-Engine/1.0"
                     }
                 )
                 with urllib.request.urlopen(req, timeout=self.timeout) as resp:
