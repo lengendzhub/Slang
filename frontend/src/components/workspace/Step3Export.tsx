@@ -163,6 +163,18 @@ export function Step3Export({
 
   const [filename, setFilename] = useState<string>(autoFilename);
 
+  const displayRole = useMemo(() => {
+    if (!targetRole || targetRole === "Target Role") return "Target Role";
+    let role = targetRole.split(/\n|corporate_fare|places|info_outline|Minimum qualifications|About the job|Responsibilities/i)[0].trim();
+    if (role.toLowerCase().startsWith("enior ")) {
+      role = "S" + role;
+    }
+    if (role.length > 60) {
+      role = role.slice(0, 57).replace(/[,_\-\s]+$/, "") + "...";
+    }
+    return role;
+  }, [targetRole]);
+
   // Sync state if JD/candidate props update
   useEffect(() => {
     setFilename(autoFilename);
@@ -250,7 +262,7 @@ export function Step3Export({
           All Changes Reviewed & Verified
         </div>
         <h2 className="text-[28px] sm:text-[34px] font-semibold tracking-tight text-ink">
-          Your Resume Is Ready for {targetRole}
+          Your Resume Is Ready for {displayRole}
         </h2>
         <p className="text-[14px] text-ink-muted max-w-[540px] mx-auto">
           Compiled inside our locked-down container with verified evidence anchoring and ATS text guarantees.

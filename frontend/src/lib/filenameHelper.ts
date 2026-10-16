@@ -35,6 +35,14 @@ export function generateJdFilename({
   };
 
   let resolvedRole = targetRole.trim();
+  resolvedRole = resolvedRole.split(/\n|corporate_fare|places|info_outline|Minimum qualifications|About the job|Responsibilities/i)[0].trim();
+  if (resolvedRole.toLowerCase().startsWith("enior ")) {
+    resolvedRole = "S" + resolvedRole;
+  }
+  if (resolvedRole.length > 50) {
+    resolvedRole = resolvedRole.slice(0, 48).replace(/[,_\-\s]+$/, "");
+  }
+
   let resolvedCompany = targetCompany.trim();
 
   // If role is missing or generic, attempt extraction from JD text
@@ -68,7 +76,8 @@ export function generateJdFilename({
           clean
         )
       ) {
-        resolvedRole = clean;
+        const cand = clean.split(/corporate_fare|places|info_outline|Minimum qualifications|About the job|Responsibilities|\n/i)[0].trim();
+        resolvedRole = cand.length > 50 ? cand.slice(0, 48).replace(/[,_\-\s]+$/, "") : cand;
         break;
       }
     }
