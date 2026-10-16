@@ -152,7 +152,7 @@ async def export_pdf(req: ExportRequest):
                     cwd=tmp,
                     capture_output=True,
                     text=True,
-                    timeout=45,
+                    timeout=90,
                 )
             except subprocess.TimeoutExpired:
                 _fail(504, "compile_timeout", "LaTeX compilation took too long.")

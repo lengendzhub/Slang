@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Loader2,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 import { BulletChange } from "./SplitScreenReview";
 import { downloadResumePdf, fetchResumePdfBlobUrl } from "@/lib/downloadResumePdf";
@@ -314,14 +315,34 @@ export function Step3Export({
                 <AlertCircle className="w-8 h-8 text-status-missing-text mx-auto" />
                 <h4 className="font-semibold text-[15px] text-ink">Preview Compilation Issue</h4>
                 <p className="text-[12px] text-ink-muted">{compileError}</p>
-                <button
-                  type="button"
-                  onClick={handleDownloadTex}
-                  className="mt-3 min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-surface border border-hairline text-ink text-[12px] font-medium"
-                >
-                  <FileCode2 className="w-3.5 h-3.5" />
-                  Inspect .tex Source
-                </button>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPdfLoading(true);
+                      setCompileError(null);
+                      fetchResumePdfBlobUrl(tailoredTex)
+                        .then(({ url, pageCount: pages }) => {
+                          setPdfBlobUrl(url);
+                          setPageCount(pages);
+                        })
+                        .catch((err) => setCompileError(err.message || "Failed to compile LaTeX preview."))
+                        .finally(() => setPdfLoading(false));
+                    }}
+                    className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-accent text-accent-contrast text-[12px] font-medium cursor-pointer shadow-subtle hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Retry Compilation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadTex}
+                    className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-surface border border-hairline text-ink text-[12px] font-medium cursor-pointer hover:bg-surface-raised active:scale-95 transition-all"
+                  >
+                    <FileCode2 className="w-3.5 h-3.5" />
+                    Inspect .tex Source
+                  </button>
+                </div>
               </div>
             )}
           </div>

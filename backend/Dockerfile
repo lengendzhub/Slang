@@ -30,6 +30,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY templates/ ./templates/
 
+# Pre-warm Tectonic package cache with real resume template so production compiles are instantaneous
+RUN tectonic -X compile templates/jakes_resume.tex --outdir /tmp && rm -rf /tmp/*
+
 # Environment defaults
 ENV PORT=8000
 ENV PYTHONUNBUFFERED=1
