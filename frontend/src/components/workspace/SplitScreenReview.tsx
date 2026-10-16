@@ -326,7 +326,7 @@ export default function SplitScreenReview({
               <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
                 ✓
               </span>
-              <span>1. Resume & Job</span>
+              <span>Resume & Job</span>
             </button>
           ) : (
             <Link
@@ -336,7 +336,7 @@ export default function SplitScreenReview({
               <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
                 ✓
               </span>
-              <span>1. Resume & Job</span>
+              <span>Resume & Job</span>
             </Link>
           )}
 
@@ -347,7 +347,7 @@ export default function SplitScreenReview({
             <span className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
               2
             </span>
-            <span>2. Review Changes</span>
+            <span>Review Changes</span>
           </div>
 
           <ChevronRight className="w-3 h-3 text-zinc-600" />
@@ -357,7 +357,7 @@ export default function SplitScreenReview({
             <span className="w-4 h-4 rounded-full bg-zinc-800 text-zinc-500 flex items-center justify-center text-[10px]">
               3
             </span>
-            <span>3. Download</span>
+            <span>Download</span>
           </div>
         </nav>
 

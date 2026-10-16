@@ -352,7 +352,7 @@ export default function WorkspacePage() {
                   1
                 </span>
               )}
-              1. Resume & Job
+              Resume & Job
             </button>
 
             <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
@@ -374,7 +374,7 @@ export default function WorkspacePage() {
                   2
                 </span>
               )}
-              2. Review Changes
+              Review Changes
             </button>
 
             <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
@@ -390,7 +390,7 @@ export default function WorkspacePage() {
               <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
                 3
               </span>
-              3. Download
+              Download
             </span>
           </nav>
 
