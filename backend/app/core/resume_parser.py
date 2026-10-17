@@ -121,13 +121,25 @@ class ResumeParser:
                 )
                 bullets.append(bullet_model)
 
+                category = (
+                    "Experience" if any(w in section_title.lower() for w in ["experience", "work", "employment"])
+                    else "Project" if "project" in section_title.lower()
+                    else "Skill" if any(w in section_title.lower() for w in ["skill", "technical", "competenc"])
+                    else "Education" if any(w in section_title.lower() for w in ["education", "academic", "university"])
+                    else "Custom"
+                )
+
                 # Record in evidence bank
                 evidence_bank.append(EvidenceRecord(
                     id=evidence_id,
                     source="master_resume",
+                    source_name=f"Master Resume // {section_title}",
                     raw_text=clean_text,
                     context=f"Section: {section_title}",
-                    verified=True
+                    category=category,
+                    status="extracted",
+                    verified=True,
+                    date_added="Extracted from LaTeX"
                 ))
 
             if not extracted_items:
@@ -136,12 +148,23 @@ class ResumeParser:
                 clean_sec = re.sub(r'[{}\\$%&#^_~]', ' ', clean_sec)
                 lines = [l.strip() for l in clean_sec.split('\n') if len(l.strip()) > 15]
                 for p_idx, p_text in enumerate(lines):
+                    category = (
+                        "Experience" if any(w in section_title.lower() for w in ["experience", "work", "employment"])
+                        else "Project" if "project" in section_title.lower()
+                        else "Skill" if any(w in section_title.lower() for w in ["skill", "technical", "competenc"])
+                        else "Education" if any(w in section_title.lower() for w in ["education", "academic", "university"])
+                        else "Custom"
+                    )
                     evidence_bank.append(EvidenceRecord(
                         id=f"ev_{section_id}_p{p_idx}",
                         source="master_resume",
+                        source_name=f"Master Resume // {section_title}",
                         raw_text=p_text,
                         context=f"Section: {section_title}",
-                        verified=True
+                        category=category,
+                        status="extracted",
+                        verified=True,
+                        date_added="Extracted from LaTeX"
                     ))
 
             section_obj = ResumeSection(
@@ -154,6 +177,41 @@ class ResumeParser:
 
         resume_id = "res_" + hashlib.md5(self.raw_latex.encode('utf-8')).hexdigest()[:10]
 
+        # Template detection
+        template_id = "jakes_resume"
+        if r"\resumeItem" in self.raw_latex:
+            template_id = "jakes_resume"
+        elif "deedy" in self.raw_latex.lower():
+            template_id = "deedy_resume"
+        elif r"\titlespacing" in self.raw_latex or "classic" in self.raw_latex.lower():
+            template_id = "classic_resume"
+        else:
+            template_id = "custom_latex"
+
+        # Calculate parse confidence
+        confidence = 0.0
+        if len(sections) >= 3:
+            confidence += 0.35
+        elif len(sections) >= 1:
+            confidence += 0.20
+
+        total_bullets = sum(len(s.bullets) for s in sections)
+        if total_bullets >= 4:
+            confidence += 0.35
+        elif total_bullets >= 1 or len(evidence_bank) >= 2:
+            confidence += 0.20
+
+        if contact_name and contact_name not in ["Alex Morgan", "Candidate"]:
+            confidence += 0.15
+        else:
+            confidence += 0.05
+
+        if contact_email and "@" in contact_email:
+            confidence += 0.10
+
+        parse_confidence = round(min(max(confidence, 0.10), 1.0), 2)
+        requires_section_mapping = parse_confidence < 0.70 or len(sections) == 0
+
         return ParsedResume(
             id=resume_id,
             raw_latex=self.raw_latex,
@@ -161,6 +219,9 @@ class ResumeParser:
             contact_name=contact_name,
             contact_email=contact_email,
             contact_phone=contact_phone,
+            template_id=template_id,
+            parse_confidence=parse_confidence,
+            requires_section_mapping=requires_section_mapping,
             sections=sections,
             evidence_bank=evidence_bank
         )

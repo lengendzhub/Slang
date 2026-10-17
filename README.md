@@ -197,4 +197,14 @@ Verified viewports:
 - **Decision M1.4 — Infrastructure & Orchestration**: Updated `docker-compose.yml` to include `postgres` (with `pgvector:pg16`), `redis:7-alpine`, `backend`, `frontend`, and optional `ollama`. Created comprehensive `.env.example`.
 - **Decision M1.5 — Sample Seeds**: Added 3 full LaTeX sample templates (`jakes_resume.tex`, `deedy_resume.tex`, `classic_resume.tex`) and 5 sample job descriptions (`software_engineer.txt`, `product_manager.txt`, `business_analyst.txt`, `digital_marketing.txt`, `product_operations.txt`).
 
+### Milestone 2: LaTeX Parsing, Section Locking & Evidence Bank Editor (SHIPPED)
+- **Decision M2.1 — Deterministic Parse & Round-Trip Verification**: Expanded `ResumeParser` to calculate `parse_confidence` metric based on recognized content slots, contact info, and structural integrity. Tested byte/whitespace round-trip reproduction across all 3 sample templates (`jakes_resume.tex`, `deedy_resume.tex`, `classic_resume.tex`), achieving 100% test pass rate. If confidence is below 70%, the system flags `requires_section_mapping = True`.
+- **Decision M2.2 — Section Locking Governance**: Implemented per-section locking toggles (`is_locked: boolean`) via `PATCH /resumes/{id}/sections/{id}/lock` and frontend state. Locked sections are preserved verbatim—the AI planner is permanently blocked from rewording or deleting items in locked sections.
+- **Decision M2.3 — Evidence Bank Multi-Source Ingestion**: Enhanced `EvidenceRecord` models with categorization (`Experience`, `Project`, `Skill`, `Education`, `Custom`) and status states (`extracted` vs `confirmed`). Users can confirm extracted facts or add new facts through:
+  1. *What did you actually do?* Q&A prompts.
+  2. *GitHub README / Repository Text* imports.
+  3. *Project Design Notes & Specifications*.
+- **Decision M2.4 — /app Dashboard & /app/master Views**: Built the `/app` dashboard displaying master resume status, AST parse confidence, and tailored siblings grid, alongside the `/app/master` structure view and Evidence Bank editor.
+
+
 

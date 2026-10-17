@@ -4,6 +4,8 @@ from fastapi.responses import StreamingResponse, Response
 import json
 import asyncio
 import uuid
+import hashlib
+from datetime import datetime
 from typing import Optional, List, Dict, Any
 
 from app.models.schemas import (
@@ -120,6 +122,94 @@ async def get_resume_by_id(resume_id: str):
     if not res:
         raise HTTPException(status_code=404, detail="Resume not found")
     return res
+
+# Evidence Bank & Section Lock Management
+@app.get("/resumes/{resume_id}/evidence", response_model=List[EvidenceRecord])
+async def get_resume_evidence(resume_id: str):
+    res = db_resumes.get(resume_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    return res.evidence_bank
+
+@app.post("/resumes/{resume_id}/evidence", response_model=EvidenceRecord)
+async def add_resume_evidence(
+    resume_id: str,
+    text: str = Form(...),
+    category: str = Form("Experience"),
+    source: str = Form("custom"),
+    source_name: Optional[str] = Form("Custom Candidate Fact"),
+    context: Optional[str] = Form("User Confirmed Evidence"),
+    skills: Optional[str] = Form("")
+):
+    res = db_resumes.get(resume_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    skill_list = [s.strip() for s in skills.split(",") if s.strip()] if skills else []
+    ev_id = f"ev_user_{int(datetime.utcnow().timestamp())}_{hashlib.md5(text.encode()).hexdigest()[:4]}"
+    
+    new_record = EvidenceRecord(
+        id=ev_id,
+        source=source,
+        source_name=source_name or "Custom Fact",
+        raw_text=text.strip(),
+        context=context or "User Confirmed Evidence",
+        category=category,
+        skills=skill_list,
+        status="confirmed",
+        verified=True,
+        date_added="Just now"
+    )
+    res.evidence_bank.insert(0, new_record)
+    db_evidence[resume_id] = res.evidence_bank
+    return new_record
+
+@app.put("/resumes/{resume_id}/evidence/{evidence_id}", response_model=EvidenceRecord)
+async def update_resume_evidence(
+    resume_id: str,
+    evidence_id: str,
+    text: Optional[str] = Form(None),
+    status: Optional[str] = Form(None),
+    category: Optional[str] = Form(None)
+):
+    res = db_resumes.get(resume_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    for item in res.evidence_bank:
+        if item.id == evidence_id:
+            if text:
+                item.raw_text = text.strip()
+            if status:
+                item.status = status
+            if category:
+                item.category = category
+            db_evidence[resume_id] = res.evidence_bank
+            return item
+    raise HTTPException(status_code=404, detail="Evidence item not found")
+
+@app.delete("/resumes/{resume_id}/evidence/{evidence_id}")
+async def delete_resume_evidence(resume_id: str, evidence_id: str):
+    res = db_resumes.get(resume_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    res.evidence_bank = [item for item in res.evidence_bank if item.id != evidence_id]
+    db_evidence[resume_id] = res.evidence_bank
+    return {"status": "success", "deleted_id": evidence_id}
+
+@app.patch("/resumes/{resume_id}/sections/{section_id}/lock")
+async def toggle_section_lock(
+    resume_id: str,
+    section_id: str,
+    is_locked: bool = Form(...)
+):
+    res = db_resumes.get(resume_id)
+    if not res:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    for sec in res.sections:
+        if sec.id == section_id:
+            sec.is_locked = is_locked
+            return {"status": "success", "section_id": section_id, "is_locked": sec.is_locked}
+    raise HTTPException(status_code=404, detail="Section not found")
 
 # 2. POST /jds
 @app.post("/jds", response_model=JDAnalysis)

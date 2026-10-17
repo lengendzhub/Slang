@@ -32,7 +32,11 @@ export interface EvidenceItemState {
   sourceName: string;
   text: string;
   context: string;
+  category?: "Experience" | "Project" | "Skill" | "Education" | "Custom";
+  skills?: string[];
+  status?: "extracted" | "confirmed";
   verified: boolean;
+  locked?: boolean;
   dateAdded: string;
 }
 
@@ -55,6 +59,10 @@ export interface UserSessionState {
   uploadedFileName: string;
   uploadedFileType: "pdf" | "tex";
   rawResumeText: string;
+  detectedTemplate?: string;
+  parseConfidence?: number;
+  requiresSectionMapping?: boolean;
+  lockedSections?: string[];
   targetRole: string;
   targetCompany: string;
   targetJdText: string;

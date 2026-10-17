@@ -33,10 +33,15 @@ class Claim(BaseModel):
 
 class EvidenceRecord(BaseModel):
     id: str
-    source: str = "master_resume"
+    source: str = "master_resume"  # 'master_resume', 'github', 'project_notes', 'user_qa'
+    source_name: Optional[str] = "Master Resume"
     raw_text: str
     context: Optional[str] = None
+    category: str = "Experience"  # 'Experience', 'Project', 'Skill', 'Education', 'Custom'
+    skills: List[str] = Field(default_factory=list)
+    status: str = "extracted"  # 'extracted' or 'confirmed'
     verified: bool = True
+    date_added: Optional[str] = "Just now"
 
 class ResumeBullet(BaseModel):
     id: str
@@ -67,6 +72,9 @@ class ParsedResume(BaseModel):
     contact_name: str
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
+    template_id: str = "jakes_resume"
+    parse_confidence: float = 1.0
+    requires_section_mapping: bool = False
     sections: List[ResumeSection] = Field(default_factory=list)
     evidence_bank: List[EvidenceRecord] = Field(default_factory=list)
 
