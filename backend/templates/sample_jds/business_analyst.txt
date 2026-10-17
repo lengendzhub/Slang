@@ -1,0 +1,26 @@
+Role: Senior Business & Data Analyst
+Company: FinTech Growth Dynamics
+Location: Hybrid / New York, NY
+
+About the Role:
+We are looking for an analytical thinker to sit at the intersection of business strategy and technical systems. You will analyze high-volume data streams, evaluate workflow bottlenecks, and collaborate directly with product and engineering leaders to deliver measurable cost reductions and efficiency gains.
+
+Key Responsibilities:
+- Audit operational workflows and data pipelines to identify cost-saving and optimization opportunities.
+- Partner with product managers and engineering teams to translate business questions into analytical specifications.
+- Build executive dashboards and weekly KPI reports monitoring operational efficiency and vendor performance.
+- Perform root cause analyses on data anomalies and discrepancies.
+
+Mandatory / Essential Requirements:
+- 3+ years of experience in business analysis, data analytics, or technical operations.
+- Advanced SQL proficiency (window functions, subqueries, query plan optimization).
+- Proven track record translating complex quantitative findings into clear executive business recommendations.
+- Experience with data visualization platforms (Tableau, PowerBI, or Looker).
+
+Required Qualifications:
+- Familiarity with Python or R for data exploration and reporting automation.
+- Demonstrated ability collaborating across multi-disciplinary teams (engineering, product, finance).
+
+Preferred / Nice to Have:
+- Knowledge of cloud data infrastructure (PostgreSQL, Snowflake, or BigQuery).
+- Experience evaluating third-party vendor SLAs and cloud operational expenditures.

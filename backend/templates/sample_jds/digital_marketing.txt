@@ -1,0 +1,26 @@
+Role: Technical Product Marketing Lead
+Company: DevPulse Tools
+Location: Remote / San Francisco, CA
+
+About the Role:
+We are looking for a Technical Product Marketer or Developer Advocate to lead our organic developer adoption and product storytelling. You will bridge deep engineering concepts and developer audiences, creating authentic tutorials, community initiatives, and data-backed product launches for our developer platforms.
+
+Key Responsibilities:
+- Author technical guides, product release breakdowns, and engineering case studies that resonate with software engineers.
+- Drive grassroots developer community advocacy across GitHub, Reddit, Hacker News, and developer meetups.
+- Partner with product and engineering teams to translate developer telemetry and product usage into narrative campaigns.
+- Measure activation funnels, organic signups, and community engagement metrics.
+
+Mandatory / Essential Requirements:
+- 3+ years of experience in product marketing, developer relations, or technical community growth.
+- Demonstrated technical literacy: ability to read code (Python, JavaScript, or Go) and understand modern API/cloud architectures.
+- Portfolio of published developer-facing content, tutorials, or open-source community contributions.
+- Analytical mindset with experience tracking acquisition funnel metrics and user retention.
+
+Required Qualifications:
+- Experience launching developer products or open-source tooling.
+- Outstanding written and verbal communication skills.
+
+Preferred / Nice to Have:
+- Prior software engineering or technical support background.
+- Experience managing developer beta programs and customer advisory boards.

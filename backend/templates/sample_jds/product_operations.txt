@@ -1,0 +1,26 @@
+Role: Product Operations Manager
+Company: ScaleVelocity Platforms
+Location: Hybrid / San Francisco, CA
+
+About the Role:
+We are hiring our first Product Operations Manager to supercharge our product development engine. You will optimize the feedback loop between customers, sales, engineering, and product managers, ensuring that high-priority user feedback directly informs our roadmap and releases execute with zero friction.
+
+Key Responsibilities:
+- Design and manage scalable operational processes for collecting, prioritizing, and analyzing product feedback across channels.
+- Partner with engineering and product squads to monitor launch health, feature flag rollouts, and regression triage.
+- Build internal dashboards tracking release velocity, customer dispute frequencies, and platform reliability.
+- Establish standard operating procedures (SOPs) and train cross-functional teams on new product capabilities.
+
+Mandatory / Essential Requirements:
+- 3+ years of experience in product operations, technical program management, or strategy operations at a technology company.
+- Exceptional analytical and data interpretation skills (SQL and spreadsheet modeling required).
+- Experience partnering closely with product managers and software engineering leads.
+- Proven ability to design workflows from scratch and streamline chaotic operational bottlenecks.
+
+Required Qualifications:
+- Familiarity with modern product management tools (JIRA, Linear, Notion, LaunchDarkly).
+- Strong track record managing cross-functional projects with tight deadlines.
+
+Preferred / Nice to Have:
+- Experience in B2B SaaS or developer-facing products.
+- Basic understanding of API integrations and webhook telemetry.

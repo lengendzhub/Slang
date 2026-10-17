@@ -1,0 +1,55 @@
+%-------------------------
+% Deedy Resume in LaTeX
+% Clean modern template for engineers & researchers
+%-------------------------
+\documentclass[letterpaper,10pt]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\titleformat{\section}{\large\bfseries\scshape\raggedright}{}{0em}{}[\titlerule\vspace{3pt}]
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+\setlist[itemize]{leftmargin=0.15in, noitemsep, topsep=1pt, parsep=0pt, partopsep=0pt}
+\newcommand{\resumeItem}[1]{\item\small{{#1}}}
+
+\begin{document}
+
+\begin{center}
+    {\Huge \textbf{Elena Rostova}} \\ \vspace{3pt}
+    \small elena.rostova@example.com $|$ +1 (555) 234-5678 $|$ github.com/erostova $|$ linkedin.com/in/erostova
+\end{center}
+
+\section{Experience}
+\textbf{Senior Distributed Systems Engineer} \hfill Jan 2022 -- Present \\
+\textit{Nexus Cloud Systems} \hfill San Francisco, CA
+\begin{itemize}
+    \resumeItem{Architected distributed caching layer with Redis, reducing p99 API query latency by 42\% across 10M daily requests.}
+    \resumeItem{Engineered event-driven streaming pipelines using Go and Kafka, handling 40,000 events/sec with sub-10ms processing latency.}
+    \resumeItem{Collaborated with cross-functional platform teams to migrate 18 legacy monolith endpoints into containerized Kubernetes microservices.}
+\end{itemize}
+
+\vspace{4pt}
+\textbf{Software Engineer} \hfill Jun 2019 -- Dec 2021 \\
+\textit{DataVibe Analytics} \hfill Austin, TX
+\begin{itemize}
+    \resumeItem{Optimized PostgreSQL query indexes and partitioned time-series datasets, decreasing analytical ETL processing runtime by 35\%.}
+    \resumeItem{Implemented automated unit and end-to-end integration test suites using Python and pytest, achieving 94\% code coverage.}
+\end{itemize}
+
+\section{Projects}
+\textbf{QueryLens} $|$ \emph{Go, PostgreSQL, Docker} \hfill github.com/erostova/querylens
+\begin{itemize}
+    \resumeItem{Developed an open-source SQL query inspection utility providing automated index recommendations for complex subquery joins.}
+    \resumeItem{Attracted 1,200+ GitHub stars and over 5,000 monthly downloads from backend engineering teams.}
+\end{itemize}
+
+\section{Education}
+\textbf{University of California, Berkeley} \hfill Berkeley, CA \\
+Bachelor of Science in Computer Science \hfill Graduated May 2019
+
+\section{Technical Skills}
+\textbf{Languages}: Go, Python, C++, SQL, Rust, JavaScript \\
+\textbf{Infrastructure \& Tools}: Docker, Kubernetes, Redis, Kafka, PostgreSQL, Git, Linux, Prometheus
+
+\end{document}

@@ -19,6 +19,7 @@
     --blue: #0071e3;
     --blue-hover: #0077ed;
     --line: #d2d2d7;
+    --line-light: #d2d2d7;
 
     /* Semantic Status Tokens (High-contrast text on muted fills) */
     --status-supported-text: #1d7d34;
@@ -56,6 +57,7 @@
     --blue: #2997ff;
     --blue-hover: #40a2ff;
     --line: #38383a;
+    --line-light: #38383a;
 
     --status-supported-text: #30d158;
     --status-supported-bg: rgba(48, 209, 88, 0.14);
@@ -213,3 +215,72 @@ nextjs-portal {
 .animate-spin {
   animation: spin-calm 2s linear infinite !important;
 }
+
+/* Apple Design System Utility Classes */
+.apple-card {
+  background-color: var(--bg);
+  border: 1px solid var(--line-light);
+  border-radius: var(--fluid-card-radius, 20px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+}
+
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 980px;
+  font-weight: 500;
+  transition: all 180ms cubic-bezier(0.28, 0.11, 0.32, 1);
+  cursor: pointer;
+}
+
+.pill-btn:hover {
+  transform: scale(1.02);
+}
+
+.pill-btn:active {
+  transform: scale(0.98);
+}
+
+.pill-btn-primary {
+  background-color: var(--blue);
+  color: #ffffff;
+}
+
+.pill-btn-primary:hover {
+  background-color: var(--blue-hover);
+}
+
+.pill-btn-secondary {
+  color: var(--blue);
+}
+
+.hero-headline {
+  font-size: var(--fluid-hero);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.section-title {
+  font-size: var(--fluid-section-headline);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.section-sub {
+  font-size: var(--fluid-sub-headline);
+  line-height: 1.38;
+  color: var(--ink-2);
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.body-large {
+  font-size: 21px;
+  line-height: 1.38;
+  font-weight: 400;
+}
+

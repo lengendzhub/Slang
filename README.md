@@ -176,3 +176,25 @@ Verified viewports:
 - 1024x768 (iPad Landscape) — **100% Zero Overflow**
 - 1440x900 (Desktop) — **100% Zero Overflow**
 
+---
+
+## 7. Milestone Decisions Log
+
+### Milestone 1: Foundations, Design Tokens & Full Animated Landing Page (SHIPPED)
+- **Decision M1.1 — Authentic Apple Design System**: Calibrated tokens for light and dark modes with `--blue: #0071E3`, `--hairline: #D2D2D7`, and the three semantic status chips (`Supported #248A3D`, `Needs confirmation #B25000`, `Missing #D70015`). Fluid typography implemented with CSS `clamp()`.
+- **Decision M1.2 — Full Landing Page Experience**: Assembled the complete editorial landing page at `/` with:
+  1. Sticky 48px translucent frosted navigation (`FrostedNav`) with dark mode switch.
+  2. Hero with word-by-word reveal, drifting blue ambient orbs, and a 4-second crossfading resume mock (Developer, Analyst, Marketing).
+  3. Pinned 300vh scroll-linked "How it works" story (`StickyHowItWorks`).
+  4. "Truth first" matrix showing the 3 verified labels (`TrustSection`).
+  5. "Your template stays yours" sandbox compilation comparison (`LatexToPdfAnimation`).
+  6. Career transition interactive playground covering IT to BA, PM, and Tech Marketing (`RoleSwitcherDemo`).
+  7. 3-card bento grid for non-negotiable principles (`BentoGrid`).
+  8. Apple-style FAQ accordion (`FaqSection`).
+  9. Final CTA (`FinalCta`) and privacy-first footer (`Footer`).
+  10. Full `prefers-reduced-motion` compliance.
+- **Decision M1.3 — 10-Table Data Model & Migrations**: Designed and committed the 10 data models (`users`, `master_resumes`, `profile_items`, `evidence`, `job_descriptions`, `requirements`, `matches`, `variants`, `changes`, `compile_runs`) with SQLAlchemy declarative models in `backend/app/models/db_models.py` and raw PostgreSQL with `pgvector` migration in `backend/migrations/init.sql`.
+- **Decision M1.4 — Infrastructure & Orchestration**: Updated `docker-compose.yml` to include `postgres` (with `pgvector:pg16`), `redis:7-alpine`, `backend`, `frontend`, and optional `ollama`. Created comprehensive `.env.example`.
+- **Decision M1.5 — Sample Seeds**: Added 3 full LaTeX sample templates (`jakes_resume.tex`, `deedy_resume.tex`, `classic_resume.tex`) and 5 sample job descriptions (`software_engineer.txt`, `product_manager.txt`, `business_analyst.txt`, `digital_marketing.txt`, `product_operations.txt`).
+
+

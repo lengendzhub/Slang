@@ -1,0 +1,51 @@
+%-------------------------
+% Classic Academic & Corporate LaTeX Resume
+% Clean single-column layout for product, operations, and business analysts
+%-------------------------
+\documentclass[letterpaper,10pt]{article}
+\usepackage[margin=0.6in]{geometry}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\titleformat{\section}{\large\scshape\raggedright}{}{0em}{}[\titlerule\vspace{2pt}]
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\setlist[itemize]{leftmargin=0.2in, noitemsep, topsep=2pt, parsep=0pt}
+\newcommand{\resumeItem}[1]{\item\small{{#1}}}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE \scshape \textbf{Marcus Vance}} \\ \vspace{4pt}
+    \small marcus.vance@example.com $\cdot$ (555) 789-0123 $\cdot$ New York, NY $\cdot$ linkedin.com/in/marcusvance
+\end{center}
+
+\section{Professional Summary}
+Results-driven operations and product analyst with 4+ years of experience analyzing telemetry, automating cross-department workflows, and collaborating with engineering teams to translate business requirements into high-impact operational systems.
+
+\section{Experience}
+\textbf{Senior Operations Analyst} \hfill Mar 2022 -- Present \\
+\textit{Apex Logistics Network} \hfill New York, NY
+\begin{itemize}
+    \resumeItem{Built automated reporting pipelines in Python and SQL, eliminating 15 hours of manual weekly reconciliation for logistics dispatchers.}
+    \resumeItem{Partnered with engineering and QA leads to define business acceptance criteria for warehouse inventory tracking APIs.}
+    \resumeItem{Monitored daily vendor SLA telemetry and presented quarterly performance dashboards to department directors.}
+\end{itemize}
+
+\vspace{6pt}
+\textbf{Business Systems Associate} \hfill Jul 2020 -- Feb 2022 \\
+\textit{Beacon Financial Systems} \hfill Boston, MA
+\begin{itemize}
+    \resumeItem{Audited billing workflows and identified recurring calculation bottlenecks, reducing processing dispute cycles by 22\%.}
+    \resumeItem{Documented 45 operational standard operating procedures (SOPs) and trained 30 incoming customer operations specialists.}
+\end{itemize}
+
+\section{Education}
+\textbf{Boston University} \hfill Boston, MA \\
+Bachelor of Arts in Economics, Minor in Information Systems \hfill 2020
+
+\section{Skills \& Certifications}
+\textbf{Business Analysis}: Workflow Mapping, SQL Analytics, Agile Sprint Planning, User Acceptance Testing (UAT) \\
+\textbf{Tools}: PostgreSQL, Tableau, Python, JIRA, Excel (Financial Modeling), Git
+
+\end{document}

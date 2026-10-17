@@ -1,27 +1,69 @@
 version: "3.8"
 
 services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tailorai-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-tailorai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tailorai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: tailorai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: tailorai-backend
     ports:
       - "8000:8000"
     environment:
       - PORT=8000
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-tailorai}
+      - REDIS_URL=redis://redis:6379/0
       # Option A: Free Cloud Groq LLM (recommended for 24/7 cloud deployments)
       - GROQ_API_KEYS=${GROQ_API_KEYS:-}
-      # Option B: Connect to Ollama (either local host or cloud container)
+      # Option B: Connect to Ollama
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
     depends_on:
-      - ollama
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: tailorai-frontend
     ports:
       - "3000:3000"
     environment:
@@ -30,9 +72,10 @@ services:
       - backend
     restart: unless-stopped
 
-  # Optional: Self-hosted Ollama container (if you have GPU or sufficient CPU on the server)
+  # Optional: Self-hosted Ollama container (when GPU or sufficient CPU is present)
   ollama:
     image: ollama/ollama:latest
+    container_name: tailorai-ollama
     ports:
       - "11434:11434"
     volumes:
@@ -40,4 +83,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data:
+  redis_data:
   ollama_models:
