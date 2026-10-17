@@ -22,6 +22,8 @@ interface Step1InputProps {
   onOpenEvidenceModal: () => void;
   candidateName?: string;
   isProcessing?: boolean;
+  hasExistingResume?: boolean;
+  initialJdText?: string;
 }
 
 export function Step1Input({
@@ -29,12 +31,20 @@ export function Step1Input({
   onOpenEvidenceModal,
   candidateName,
   isProcessing = false,
+  hasExistingResume = false,
+  initialJdText = "",
 }: Step1InputProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [jdText, setJdText] = useState("");
+  const [jdText, setJdText] = useState(initialJdText);
   const [transitionMode, setTransitionMode] = useState<"Same Field" | "Career Pivot" | "Entry Level">("Career Pivot");
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (initialJdText !== undefined) {
+      setJdText(initialJdText);
+    }
+  }, [initialJdText]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -56,7 +66,7 @@ export function Step1Input({
     e.preventDefault();
     setValidationError(null);
 
-    if (!selectedFile) {
+    if (!selectedFile && !hasExistingResume) {
       setValidationError("Please upload your master resume (.tex or .pdf) first.");
       return;
     }
@@ -162,6 +172,24 @@ export function Step1Input({
                     <Trash2 className="w-3.5 h-3.5" />
                     Remove Selected File
                   </button>
+                </div>
+              </div>
+            ) : hasExistingResume ? (
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-full bg-status-supported-bg text-status-supported-text mx-auto flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-[15px] font-semibold text-ink">
+                    {candidateName && candidateName !== "Candidate" ? `${candidateName}'s Master Resume` : "Master Resume Active"}
+                  </h4>
+                  <p className="text-[12px] text-ink-muted mt-0.5">
+                    Ready to tailor for this target role • Drop a new file to change
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-status-supported-bg text-status-supported-text text-[11px] font-medium">
+                  <span>✓</span>
+                  Master Preamble & Formatting Locked
                 </div>
               </div>
             ) : (

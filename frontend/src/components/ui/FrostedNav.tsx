@@ -58,6 +58,16 @@ export function FrostedNav() {
     }
   }, [mobileMenuOpen]);
 
+  // Handle 'Tailor Your Resume' click: if already on /workspace, trigger a clean draft reset
+  const handleTailorClick = (e: React.MouseEvent) => {
+    if (pathname === "/workspace") {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent("slang:reset-workspace"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setMobileMenuOpen(false);
+  };
+
   // Close mobile menu on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -158,6 +168,7 @@ export function FrostedNav() {
 
           <Link
             href="/workspace"
+            onClick={handleTailorClick}
             className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle min-h-[36px] transition-all duration-fast ease-apple active:scale-[0.98]"
           >
             Tailor Your Resume
@@ -242,7 +253,7 @@ export function FrostedNav() {
             >
               <Link
                 href="/workspace"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleTailorClick}
                 className="w-full min-h-[48px] rounded-pill bg-accent text-white text-[16px] font-medium inline-flex items-center justify-center gap-2 shadow-subtle hover:bg-accent-hover transition-colors"
               >
                 <span>Tailor Your Resume</span>

@@ -67,6 +67,23 @@ export default function WorkspacePage() {
     };
   }, []);
 
+  const handleStartOver = () => {
+    setCurrentStep(1);
+    setTargetRole("Target Role");
+    setTargetCompany("");
+    setJdText("");
+    setDiffs([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    const handleReset = () => {
+      handleStartOver();
+    };
+    window.addEventListener("slang:reset-workspace", handleReset);
+    return () => window.removeEventListener("slang:reset-workspace", handleReset);
+  }, []);
+
   const handleClearWorkspace = async () => {
     if (!confirm("Are you sure you want to clear your current workspace draft and all cached session data?")) {
       return;
@@ -118,7 +135,7 @@ export default function WorkspacePage() {
     jdText: string;
     mode: "Same Field" | "Career Pivot" | "Entry Level";
   }) => {
-    if (!file) {
+    if (!file && !rawLatex) {
       alert("Please upload your master resume (.tex or .pdf) before generating a tailored draft.");
       return;
     }
@@ -173,7 +190,18 @@ export default function WorkspacePage() {
         if (resumeRes.ok) {
           const resData = await resumeRes.json();
           activeResumeId = resData.id;
+          extractedName = resData.contact_name || extractedName;
+          extractedEmail = resData.contact_email || extractedEmail;
+          returnedLatex = resData.raw_latex || returnedLatex;
+
+          setCandidateName(extractedName);
+          setCandidateEmail(extractedEmail);
+          setRawLatex(returnedLatex);
         }
+      }
+
+      if (!activeResumeId) {
+        throw new Error("Unable to parse master resume. Please upload your .tex or .pdf file.");
       }
 
       // 2. Analyze Job Description
@@ -443,6 +471,8 @@ export default function WorkspacePage() {
             onOpenEvidenceModal={handleOpenEvidenceModal}
             candidateName={candidateName}
             isProcessing={isProcessing}
+            hasExistingResume={Boolean(rawLatex && rawLatex.trim())}
+            initialJdText={jdText}
           />
         )}
 
@@ -470,7 +500,7 @@ export default function WorkspacePage() {
             reviewedChanges={diffs}
             rawLatex={rawLatex}
             jdText={jdText}
-            onStartOver={() => setCurrentStep(1)}
+            onStartOver={handleStartOver}
             onBackToStep2={() => setCurrentStep(2)}
           />
         )}
