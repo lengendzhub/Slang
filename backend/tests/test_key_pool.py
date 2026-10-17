@@ -2,7 +2,7 @@ import time
 from app.core.key_pool import LLMKeyPool
 
 def test_key_pool_round_robin():
-    pool = LLMKeyPool()
+    pool = LLMKeyPool(auto_load=False)
     pool.load_keys(["key_a", "key_b", "key_c"])
     
     # Sequential acquisitions should cycle through keys
@@ -12,7 +12,7 @@ def test_key_pool_round_robin():
     assert pool.acquire_key(strategy="round_robin") == "key_a"
 
 def test_key_pool_cooldown_on_rate_limit():
-    pool = LLMKeyPool()
+    pool = LLMKeyPool(auto_load=False)
     pool.load_keys(["key_1", "key_2"])
 
     # Key 1 hits rate limit
@@ -28,7 +28,7 @@ def test_key_pool_cooldown_on_rate_limit():
     assert stats["healthy_keys"] == 1
 
 def test_key_pool_least_in_flight():
-    pool = LLMKeyPool()
+    pool = LLMKeyPool(auto_load=False)
     pool.load_keys(["k1", "k2", "k3"])
 
     # Pick k1 and don't release yet (in_flight = 1)

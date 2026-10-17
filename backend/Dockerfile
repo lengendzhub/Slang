@@ -30,8 +30,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY templates/ ./templates/
 
-# Pre-warm Tectonic package cache with real resume template so production compiles are instantaneous
-RUN tectonic -X compile templates/jakes_resume.tex --outdir /tmp && rm -rf /tmp/*
+# Pre-warm Tectonic package cache with real resume templates so production compiles are instantaneous (<1.5s)
+RUN tectonic -X compile templates/jakes_resume.tex --outdir /tmp \
+    && echo "\\documentclass[letterpaper,10pt]{article}\\usepackage[margin=0.5in]{geometry}\\usepackage{latexsym,titlesec,hyperref,enumitem,tabularx}\\begin{document}Prewarm\\end{document}" > /tmp/prewarm.tex \
+    && tectonic -X compile /tmp/prewarm.tex --outdir /tmp \
+    && rm -rf /tmp/*
 
 # Environment defaults
 ENV PORT=8000

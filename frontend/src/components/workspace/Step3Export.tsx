@@ -243,7 +243,16 @@ export function Step3Export({
     setDownloadingPdf(true);
     setCompileError(null);
     try {
-      await downloadResumePdf(tailoredTex, safeName);
+      if (pdfBlobUrl && pageCount <= 1) {
+        const a = document.createElement("a");
+        a.href = pdfBlobUrl;
+        a.download = `${safeName}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        await downloadResumePdf(tailoredTex, safeName);
+      }
     } catch (err: any) {
       console.error("Download PDF error:", err);
       setCompileError(err.message || "PDF compilation failed.");

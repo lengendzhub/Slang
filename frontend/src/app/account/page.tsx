@@ -14,6 +14,7 @@ import {
   Lock,
 } from "lucide-react";
 import { loadUserSession, clearUserSession } from "@/lib/store";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 export default function AccountPage() {
   const [candidateEmail, setCandidateEmail] = useState("user@example.com");
@@ -95,7 +96,7 @@ export default function AccountPage() {
 
     // Call backend delete if available
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = getApiBaseUrl();
       await fetch(`${apiUrl}/me/data`, { method: "DELETE" });
     } catch {
       // client-side purge succeeds

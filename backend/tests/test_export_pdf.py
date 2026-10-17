@@ -12,6 +12,11 @@ def test_sanitize_latex_percent_and_underscore():
     assert r"google\_pay\_service" in clean
     assert r"\$500K" in clean
 
+    raw_dollar = r"\begin{document}" "\n" r"\resumeItem{Managed budget ($ USD) scaling revenue $10M+}" "\n" r"\end{document}"
+    clean_dollar = sanitize_latex_characters(raw_dollar)
+    assert r"(\$ USD)" in clean_dollar
+    assert r"\$10M+" in clean_dollar
+
 
 def test_sanitize_preserves_preamble_and_already_escaped():
     raw = (

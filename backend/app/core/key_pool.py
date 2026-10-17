@@ -40,13 +40,17 @@ class LLMKeyPool:
         self,
         provider: str = "groq",
         env_var_name: str = "GROQ_API_KEYS",
-        default_cooldown: float = 60.0
+        default_cooldown: float = 60.0,
+        auto_load: bool = True,
     ):
         self.provider = provider
         self.default_cooldown = default_cooldown
         self._lock = threading.Lock()
         self._keys: List[KeyState] = []
         self._cursor = 0
+
+        if not auto_load:
+            return
 
         # Load keys from environment variable (comma or newline separated)
         raw_keys = os.getenv(env_var_name, "")
@@ -84,10 +88,12 @@ class LLMKeyPool:
             keys = [k.strip() for k in raw_keys.replace("\n", ",").split(",") if k.strip()]
             self.load_keys(keys)
 
-    def load_keys(self, keys: List[str]) -> None:
+    def load_keys(self, keys: List[str], replace: bool = False) -> None:
         """Loads or replaces the key pool with a list of API keys."""
         with self._lock:
-            # Avoid duplicate keys
+            if replace:
+                self._keys = []
+                self._cursor = 0
             existing_keys = {k.key for k in self._keys}
             for k in keys:
                 if k not in existing_keys:

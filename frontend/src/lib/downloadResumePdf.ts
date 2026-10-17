@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "./apiConfig";
+
 // Replace window.print() on the Download / Export button with this.
 // Usage: onClick={() => downloadResumePdf(tailoredTex, "Marimuthu_Resume")}
 
@@ -7,7 +9,7 @@ export interface PdfPreviewResult {
 }
 
 export async function downloadResumePdf(tex: string, name = "tailored_resume") {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = getApiBaseUrl();
   const res = await fetch(`${apiUrl}/exports/pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -16,8 +18,16 @@ export async function downloadResumePdf(tex: string, name = "tailored_resume") {
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
+    let errorMsg = body?.detail?.message;
+    if (!errorMsg) {
+      if (res.status === 504 || res.status === 502 || res.status === 503) {
+        errorMsg = `Backend server is warming up or busy (HTTP ${res.status}). Please retry in a few seconds.`;
+      } else {
+        errorMsg = `PDF compilation failed with HTTP ${res.status}.`;
+      }
+    }
     const logSnippet = body?.detail?.log ? ` (${body.detail.log.slice(-150).trim()})` : "";
-    throw new Error((body?.detail?.message ?? "PDF export failed") + logSnippet);
+    throw new Error(errorMsg + logSnippet);
   }
 
   const blob = await res.blob();
@@ -33,7 +43,7 @@ export async function downloadResumePdf(tex: string, name = "tailored_resume") {
 }
 
 export async function fetchResumePdfBlobUrl(tex: string): Promise<PdfPreviewResult> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const apiUrl = getApiBaseUrl();
   const res = await fetch(`${apiUrl}/exports/pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,8 +52,16 @@ export async function fetchResumePdfBlobUrl(tex: string): Promise<PdfPreviewResu
 
   if (!res.ok) {
     const body = await res.json().catch(() => null);
+    let errorMsg = body?.detail?.message;
+    if (!errorMsg) {
+      if (res.status === 504 || res.status === 502 || res.status === 503) {
+        errorMsg = `Backend server is warming up or busy (HTTP ${res.status}). Please click Retry Compilation.`;
+      } else {
+        errorMsg = `LaTeX preview compilation failed (HTTP ${res.status}).`;
+      }
+    }
     const logSnippet = body?.detail?.log ? ` (${body.detail.log.slice(-150).trim()})` : "";
-    throw new Error((body?.detail?.message ?? "Failed to compile preview PDF") + logSnippet);
+    throw new Error(errorMsg + logSnippet);
   }
 
   const pageCount = Number(res.headers.get("X-Page-Count") ?? 1);

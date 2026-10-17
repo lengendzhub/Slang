@@ -19,6 +19,7 @@ import {
   clearUserSession,
   UserSessionState,
 } from "@/lib/store";
+import { getApiBaseUrl } from "@/lib/apiConfig";
 
 export default function WorkspacePage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -72,7 +73,7 @@ export default function WorkspacePage() {
     }
     clearUserSession();
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = getApiBaseUrl();
       await fetch(`${apiUrl}/me/data`, { method: "DELETE" });
     } catch {
       // client-side purge succeeds
@@ -132,7 +133,7 @@ export default function WorkspacePage() {
     setProcessingStage("Reading resume...");
     setJdText(jdText);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const API_BASE = getApiBaseUrl();
 
     try {
       let activeResumeId = "";
@@ -287,9 +288,9 @@ export default function WorkspacePage() {
         });
       }
 
-      // Calibrated pacing: gives user 3.5s to see the 4 pipeline stages verify cleanly
+      // Calibrated pacing: gives user 7.0s to see the 4 pipeline stages verify cleanly
       const elapsed = Date.now() - startTime;
-      const MIN_DISPLAY_MS = 3500;
+      const MIN_DISPLAY_MS = 7000;
       if (elapsed < MIN_DISPLAY_MS) {
         await new Promise((resolve) => setTimeout(resolve, MIN_DISPLAY_MS - elapsed));
       }
@@ -431,7 +432,7 @@ export default function WorkspacePage() {
             setCurrentStep(2);
           }}
           autoSimulate={true}
-          totalDurationMs={3500}
+          totalDurationMs={7000}
           title="Polishing your draft"
         />
 

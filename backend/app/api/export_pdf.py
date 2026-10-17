@@ -99,8 +99,8 @@ def sanitize_latex_characters(tex_code: str) -> str:
         # Raw '_' outside math mode
         l = re.sub(r'(?<!\\)_', r'\_', l)
 
-        # Raw '$' when used as currency (e.g. $100K, $50M) not in math mode
-        l = re.sub(r'(?<!\\)\$(\d)', r'\$\1', l)
+        # Raw '$' when used as currency (e.g. $100K, $50M) or isolated symbols not in math mode
+        l = re.sub(r'(?<!\\)\$', r'\$', l)
         
         sanitized_lines.append(l)
         
@@ -144,6 +144,8 @@ async def export_pdf(req: ExportRequest):
     # Sanitize pdfTeX-specific glyphtounicode primitives for XeTeX/Tectonic
     clean_tex = re.sub(r"\\input\{glyphtounicode(?:\.tex)?\}", r"% \\g<0>", tex_content)
     clean_tex = re.sub(r"\\pdfgentounicode\s*=\s*\d+", r"% \\g<0>", clean_tex)
+    # Comment out babel package if present to prevent downloading 100+ language hyphenation packs
+    clean_tex = re.sub(r"\\usepackage(\[[^\]]*\])?\{babel\}", r"% \\g<0>", clean_tex)
     clean_tex = (
         clean_tex.replace("\u2013", "--")
         .replace("\u2014", "---")
