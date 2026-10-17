@@ -110,13 +110,38 @@ def sanitize_latex_characters(tex_code: str) -> str:
     return sanitized_body
 
 
+def _compact_tex_spacing(tex_code: str) -> str:
+    """Subtly tightens margins and itemize spacing to rescue 1-page fit without dropping content."""
+    t = tex_code
+    # Tighten margins from 0.5in/0.75in down to 0.4in
+    t = re.sub(r'margin=[0-9.]+in', 'margin=0.4in', t)
+    # If fullpage was used, replace with compact geometry
+    t = re.sub(r'\\usepackage\[empty\]\{fullpage\}', r'\\usepackage[margin=0.4in]{geometry}', t)
+    # Tighten itemize spacing if defined
+    if r'\setlist[itemize]' in t:
+        t = re.sub(r'\\setlist\[itemize\]\{[^}]*\}', r'\\setlist[itemize]{leftmargin=0.15in, noitemsep, topsep=0pt, parsep=0pt, partopsep=0pt}', t)
+    # Tighten titlespacing if defined
+    if r'\titlespacing' in t:
+        t = re.sub(r'\\titlespacing\*?\{\\section\}\{[^}]*\}\{[^}]*\}\{[^}]*\}', r'\\titlespacing*{\\section}{0pt}{3pt}{2pt}', t)
+    return t
+
+
 def _trim_tex_bullet(tex_code: str) -> tuple[str, bool]:
-    """Finds and drops the last itemize bullet in the document."""
+    """Finds and drops the last itemize bullet in the document (supports both \\resumeItem and \\item)."""
+    # 1. Try matching \resumeItem{...}
     matches = list(re.finditer(r'\\resumeItem\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', tex_code))
     if len(matches) > 3:
         last = matches[-1]
         new_tex = tex_code[:last.start()] + tex_code[last.end():]
         return new_tex, True
+
+    # 2. Fall back to standard \item ... up to next \item or \end{itemize}
+    item_matches = list(re.finditer(r'\\item\b(?:\s*\[[^\]]*\])?\s*([^\n\\]+(?:\n(?!\\item\b|\\end\{itemize\})[^\n\\]*)*)', tex_code))
+    if len(item_matches) > 3:
+        last = item_matches[-1]
+        new_tex = tex_code[:last.start()] + tex_code[last.end():]
+        return new_tex, True
+
     return tex_code, False
 
 
@@ -166,7 +191,8 @@ async def export_pdf(req: ExportRequest):
         src = Path(tmp) / "resume.tex"
         pdf_path = Path(tmp) / "resume.pdf"
 
-        max_trim_attempts = 10 if (req.enforce and req.fit) else 1
+        max_trim_attempts = 10 if req.fit else 1
+        compacted = False
         for attempt in range(max_trim_attempts):
             src.write_text(clean_tex, encoding="utf-8")
             try:
@@ -199,10 +225,16 @@ async def export_pdf(req: ExportRequest):
                 page_texts = [page.get_text() for page in doc]
             previews = [f"p{i + 1}: {_preview(t)}" for i, t in enumerate(page_texts)]
 
-            if pages <= req.max_pages or not (req.enforce and req.fit):
+            if pages <= req.max_pages or not req.fit:
                 break
 
-            # Trim one bullet from the bottom and recompile
+            # 1. First overflow attempt: Compact spacing and margins to preserve 100% of bullets
+            if not compacted:
+                compacted = True
+                clean_tex = _compact_tex_spacing(clean_tex)
+                continue
+
+            # 2. Subsequent overflow attempts: Trim last bullet
             clean_tex, trimmed = _trim_tex_bullet(clean_tex)
             if not trimmed:
                 break

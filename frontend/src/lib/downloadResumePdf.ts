@@ -42,12 +42,12 @@ export async function downloadResumePdf(tex: string, name = "tailored_resume") {
   URL.revokeObjectURL(url);
 }
 
-export async function fetchResumePdfBlobUrl(tex: string): Promise<PdfPreviewResult> {
+export async function fetchResumePdfBlobUrl(tex: string, autoFit = false): Promise<PdfPreviewResult> {
   const apiUrl = getApiBaseUrl();
   const res = await fetch(`${apiUrl}/exports/pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tex, filename: "preview", max_pages: 1, enforce: false }),
+    body: JSON.stringify({ tex, filename: "preview", max_pages: 1, enforce: false, fit: autoFit }),
   });
 
   if (!res.ok) {

@@ -471,6 +471,7 @@ export default function WorkspacePage() {
             rawLatex={rawLatex}
             jdText={jdText}
             onStartOver={() => setCurrentStep(1)}
+            onBackToStep2={() => setCurrentStep(2)}
           />
         )}
       </main>

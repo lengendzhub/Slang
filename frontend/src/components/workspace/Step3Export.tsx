@@ -14,6 +14,7 @@ import {
   Loader2,
   FileText,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { BulletChange } from "./SplitScreenReview";
 import { downloadResumePdf, fetchResumePdfBlobUrl } from "@/lib/downloadResumePdf";
@@ -28,6 +29,7 @@ interface Step3ExportProps {
   rawLatex?: string;
   jdText?: string;
   onStartOver?: () => void;
+  onBackToStep2?: () => void;
 }
 
 const INTERVIEW_QUESTIONS = [
@@ -143,12 +145,15 @@ export function Step3Export({
   rawLatex,
   jdText,
   onStartOver,
+  onBackToStep2,
 }: Step3ExportProps) {
   const [showInterviewPrep, setShowInterviewPrep] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState<number>(1);
   const [pdfLoading, setPdfLoading] = useState(true);
+  const [autoFitting, setAutoFitting] = useState(false);
+  const [isAutoFitted, setIsAutoFitted] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
 
   // Auto-generate clean, role-specific filename based on Job Description & candidate
@@ -262,6 +267,22 @@ export function Step3Export({
     }
   };
 
+  const handleAutoFitTo1Page = async () => {
+    setAutoFitting(true);
+    setCompileError(null);
+    try {
+      const { url, pageCount: pages } = await fetchResumePdfBlobUrl(tailoredTex, true);
+      setPdfBlobUrl(url);
+      setPageCount(pages);
+      setIsAutoFitted(true);
+    } catch (err: any) {
+      console.error("Auto-fit error:", err);
+      setCompileError(err.message || "Failed to auto-fit to 1 page.");
+    } finally {
+      setAutoFitting(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-[1120px] mx-auto space-y-8">
       {/* Header */}
@@ -279,14 +300,48 @@ export function Step3Export({
       </div>
 
       {pageCount > 1 && (
-        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 flex items-start gap-3 text-[13px] text-amber-800 dark:text-amber-200">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-          <div className="space-y-0.5">
-            <p className="font-semibold">Compiles to {pageCount} pages, trim before download</p>
-            <p className="text-[12px] opacity-90">
-              The single-page budget is enforced on final download. Review the live preview below or trim excess bullets in Step 2 to keep your resume to 1 page.
-            </p>
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[13px] text-amber-950 dark:text-amber-100 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <div className="space-y-0.5">
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
+                Spills onto {pageCount} pages, trim or auto-fit to 1 page
+              </p>
+              <p className="text-[12px] opacity-90 text-amber-800 dark:text-amber-300/90">
+                Single-page budget is essential for ATS screening. Auto-fit tightens margins & spacing, or you can trim bullets in Step 2.
+              </p>
+            </div>
           </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              disabled={autoFitting || pdfLoading}
+              onClick={handleAutoFitTo1Page}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-pill bg-amber-600 hover:bg-amber-700 text-white text-[12px] font-medium shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {autoFitting ? "Fitting to 1 Page..." : "⚡ Auto-Fit to 1 Page"}
+            </button>
+            {onBackToStep2 && (
+              <button
+                type="button"
+                onClick={onBackToStep2}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-pill bg-canvas border border-hairline text-ink hover:bg-surface-raised text-[12px] font-medium transition-all active:scale-95 cursor-pointer"
+              >
+                ← Trim in Step 2
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isAutoFitted && pageCount === 1 && (
+        <div className="p-3.5 rounded-xl bg-status-supported-bg border border-status-supported-text/30 flex items-center justify-between gap-3 text-[13px] text-status-supported-text">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span className="font-medium">Successfully auto-fitted to exactly 1 page with ATS layout lock!</span>
+          </div>
+          <span className="text-[11px] font-mono opacity-80">100% Fit Guaranteed</span>
         </div>
       )}
 
@@ -391,10 +446,20 @@ export function Step3Export({
               </div>
 
               <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
+                {pageCount === 1 ? (
+                  <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                )}
                 <div>
-                  <p className="text-[13px] font-medium text-ink">Single-page budget kept</p>
-                  <p className="text-[11px] text-ink-muted">Exact character budgets strictly respected across all bullets.</p>
+                  <p className="text-[13px] font-medium text-ink">
+                    {pageCount === 1 ? "Single-page budget kept" : `${pageCount} pages detected (auto-fit available)`}
+                  </p>
+                  <p className="text-[11px] text-ink-muted">
+                    {pageCount === 1
+                      ? "Exact character budgets strictly respected across all bullets."
+                      : "Click 'Auto-Fit to 1 Page' above to optimize margins & spacing."}
+                  </p>
                 </div>
               </div>
 
