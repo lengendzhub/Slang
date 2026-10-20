@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Menu, X, ArrowRight, ShieldCheck } from "lucide-react";
+import { Moon, Sun, Menu, X, ArrowRight, ShieldCheck, User as UserIcon, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getCurrentUser, clearAuthSession, AuthUser } from "@/lib/authStore";
 
 export function FrostedNav() {
   const [isDark, setIsDark] = useState(false);
@@ -12,6 +13,17 @@ export function FrostedNav() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  // Sync auth state
+  useEffect(() => {
+    setUser(getCurrentUser());
+    const handleAuthChange = () => {
+      setUser(getCurrentUser());
+    };
+    window.addEventListener("slang_auth_changed", handleAuthChange);
+    return () => window.removeEventListener("slang_auth_changed", handleAuthChange);
+  }, []);
 
   // Sync and toggle theme
   useEffect(() => {
@@ -166,6 +178,25 @@ export function FrostedNav() {
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
+          {user ? (
+            <Link
+              href="/account"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-surface border border-hairline text-[12px] font-medium text-ink hover:bg-canvas transition-colors shadow-subtle min-h-[34px]"
+            >
+              <div className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">
+                {user.name ? user.name[0].toUpperCase() : "U"}
+              </div>
+              <span className="truncate max-w-[90px]">{user.name.split(" ")[0]}</span>
+            </Link>
+          ) : (
+            <Link
+              href="/signin"
+              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-pill text-[13px] font-medium text-ink hover:text-accent transition-colors min-h-[36px]"
+            >
+              Sign In
+            </Link>
+          )}
+
           <Link
             href="/workspace"
             onClick={handleTailorClick}
@@ -251,6 +282,47 @@ export function FrostedNav() {
               transition={{ duration: 0.3, delay: 0.1, ease: [0.28, 0.11, 0.32, 1] }}
               className="pt-6 border-t border-hairline space-y-3"
             >
+              {user ? (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-hairline">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-[13px]">
+                      {user.name ? user.name[0].toUpperCase() : "U"}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-ink leading-tight">{user.name}</p>
+                      <p className="text-[11px] text-ink-muted">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearAuthSession();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-1.5 text-ink-muted hover:text-red-500 rounded cursor-pointer"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/signin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full min-h-[42px] rounded-pill bg-canvas border border-hairline text-ink text-[14px] font-medium inline-flex items-center justify-center hover:bg-surface transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full min-h-[42px] rounded-pill bg-surface border border-hairline text-accent text-[14px] font-medium inline-flex items-center justify-center hover:bg-canvas transition-colors"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              )}
               <Link
                 href="/workspace"
                 onClick={handleTailorClick}

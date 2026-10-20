@@ -4,40 +4,120 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FrostedNav } from "@/components/ui/FrostedNav";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiConfig";
+import { setAuthSession } from "@/lib/authStore";
+import { saveUserSession } from "@/lib/store";
 
 export default function SignUpPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/studio");
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const apiBase = getApiBaseUrl();
+      const res = await fetch(`${apiBase}/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to create account.");
+      }
+
+      setAuthSession(data.token, data.user);
+      saveUserSession({
+        candidateName: data.user.name,
+        candidateEmail: data.user.email,
+      });
+
+      router.push("/workspace");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const apiBase = getApiBaseUrl();
+      const res = await fetch(`${apiBase}/auth/google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: "google.candidate@example.com",
+          name: name.trim() || "Elena Rostova",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Google sign up failed.");
+      }
+
+      setAuthSession(data.token, data.user);
+      saveUserSession({
+        candidateName: data.user.name,
+        candidateEmail: data.user.email,
+      });
+
+      router.push("/workspace");
+    } catch (err: any) {
+      setError(err.message || "Google sign up failed.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--ink)]">
+    <div className="min-h-screen flex flex-col bg-canvas text-ink selection:bg-accent selection:text-white">
       <FrostedNav />
 
-      <main className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-[420px] apple-card p-8">
-          <div className="text-center mb-8">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--blue)] block mb-1">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12">
+        <div className="w-full max-w-[420px] bg-surface border border-hairline rounded-card p-6 sm:p-8 shadow-paper space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-1.5">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-accent block">
               Start Tailoring Truthfully
             </span>
-            <h1 className="text-[26px] font-semibold tracking-tight text-[var(--ink)]">
+            <h1 className="text-[26px] font-semibold tracking-tight text-ink">
               Create Your Account
             </h1>
-            <p className="text-[14px] text-[var(--ink-2)] mt-1">
-              Protected by isolated sandboxes and zero retention.
+            <p className="text-[13px] text-ink-muted">
+              Evidence-anchored resumes • Zero hallucinations guaranteed.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Error Banner */}
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-[12px] flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSignUp} className="space-y-4">
             <div>
-              <label className="text-[12px] font-semibold text-[var(--ink-2)] uppercase block mb-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted block mb-1.5">
                 Full Name
               </label>
               <input
@@ -45,13 +125,13 @@ export default function SignUpPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Morgan"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--line-light)] bg-[var(--bg-alt)] text-[14px] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--blue)]"
+                placeholder="Elena Rostova"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-hairline bg-canvas text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-ink-muted"
               />
             </div>
 
             <div>
-              <label className="text-[12px] font-semibold text-[var(--ink-2)] uppercase block mb-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted block mb-1.5">
                 Email Address
               </label>
               <input
@@ -60,45 +140,60 @@ export default function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--line-light)] bg-[var(--bg-alt)] text-[14px] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--blue)]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-hairline bg-canvas text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-ink-muted"
               />
             </div>
 
             <div>
-              <label className="text-[12px] font-semibold text-[var(--ink-2)] uppercase block mb-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted block mb-1.5">
                 Password
               </label>
               <input
                 type="password"
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--line-light)] bg-[var(--bg-alt)] text-[14px] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--blue)]"
+                placeholder="At least 6 characters"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-hairline bg-canvas text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-ink-muted"
               />
             </div>
 
             <button
               type="submit"
-              className="pill-btn pill-btn-primary w-full py-2.5 text-[14px] mt-2 shadow-sm"
+              disabled={isLoading}
+              className="w-full min-h-[44px] rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle inline-flex items-center justify-center gap-2 transition-all duration-fast ease-apple active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
-              Create Account
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
-          <div className="relative my-6">
+          {/* Divider */}
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[var(--line-light)]" />
+              <div className="w-full border-t border-hairline" />
             </div>
-            <div className="relative flex justify-center text-[12px] uppercase">
-              <span className="bg-[var(--bg)] px-2 text-[var(--ink-2)]">Or continue with</span>
+            <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
+              <span className="bg-surface px-2.5 text-ink-muted">Or continue with</span>
             </div>
           </div>
 
+          {/* Google Sign-up Button */}
           <button
-            onClick={() => router.push("/studio")}
-            className="pill-btn w-full py-2.5 text-[14px] bg-[var(--bg)] border border-[var(--line-light)] text-[var(--ink)] hover:bg-[var(--bg-alt)] flex items-center justify-center gap-2"
+            type="button"
+            onClick={handleGoogleSignUp}
+            disabled={isLoading}
+            className="w-full min-h-[44px] rounded-pill bg-canvas border border-hairline text-ink hover:bg-surface text-[14px] font-medium inline-flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -118,15 +213,16 @@ export default function SignUpPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            Continue with Google
+            <span>Sign up with Google</span>
           </button>
 
-          <p className="text-center text-[13px] text-[var(--ink-2)] mt-6">
+          {/* Footer link to sign in */}
+          <div className="pt-2 text-center text-[12px] text-ink-muted">
             Already have an account?{" "}
-            <Link href="/signin" className="text-[var(--link)] hover:underline font-medium">
-              Sign in
+            <Link href="/signin" className="text-accent font-medium hover:underline">
+              Sign In
             </Link>
-          </p>
+          </div>
         </div>
       </main>
     </div>

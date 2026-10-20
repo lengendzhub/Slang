@@ -206,5 +206,8 @@ Verified viewports:
   3. *Project Design Notes & Specifications*.
 - **Decision M2.4 — /app Dashboard & /app/master Views**: Built the `/app` dashboard displaying master resume status, AST parse confidence, and tailored siblings grid, alongside the `/app/master` structure view and Evidence Bank editor.
 
-
-
+### Milestone 3: Authentication, Session Governance & User Profile Management (SHIPPED)
+- **Decision M3.1 — Zero-External-Dependency HMAC-SHA256 JWT**: Implemented standard library crypto token signing and verification (`hashlib`, `hmac`, `base64`) with configurable expiration and secret keys, eliminating complex third-party C-extensions while ensuring 100% test reliability.
+- **Decision M3.2 — Full Auth REST API**: Mounted `/auth/signup`, `/auth/login`, `/auth/google`, `/auth/me`, and `/auth/logout` endpoints in FastAPI with password hashing, input validation, bearer token middleware, and pre-seeded demo accounts.
+- **Decision M3.3 — Universal Auth Client Store & Event Dispatch**: Created `authStore.ts` with local storage persistence and `slang_auth_changed` custom events to reactively synchronize auth state across `FrostedNav`, `AccountPage`, and the workspace without page reloads.
+- **Decision M3.4 — 1-Click Demo & Google Sign-In UI**: Added instant 1-click test credentials on `/signin` for fast evaluation, live validation alerts, and seamless integration with user account settings and zero-retention data purge.

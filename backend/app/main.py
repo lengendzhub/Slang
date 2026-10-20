@@ -80,8 +80,10 @@ def health_check():
 
 from app.core.pdf_extractor import PDFResumeExtractor
 from app.api.export_pdf import router as export_pdf_router
+from app.api.auth import router as auth_router
 
 app.include_router(export_pdf_router)
+app.include_router(auth_router)
 
 # 1. POST /resumes (Supports both PDF and LaTeX .tex files)
 @app.post("/resumes", response_model=ParsedResume)
