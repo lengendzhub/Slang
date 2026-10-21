@@ -108,54 +108,25 @@ export function Hero() {
 
       <div className="max-w-[1120px] mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
         {/* Subtle pill tag */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.28, 0.11, 0.32, 1] }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill border border-hairline bg-surface shadow-subtle mb-6"
-        >
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-pill border border-hairline bg-surface shadow-subtle mb-6 animate-in fade-in duration-300">
           <ShieldCheck className="w-4 h-4 text-accent" />
           <span className="text-[12px] font-medium tracking-tight text-ink-muted">
             Evidence-Only LaTeX Tailoring • Zero Hallucinations
           </span>
-        </motion.div>
+        </div>
 
-        {/* Hero Headline with word-by-word reveal */}
+        {/* Hero Headline */}
         <h1 className="text-[44px] sm:text-[60px] md:text-[76px] font-semibold tracking-[-0.03em] leading-[1.05] text-ink max-w-[840px] mb-6">
-          {headlineWords.map((word, i) => (
-            <motion.span
-              key={i}
-              className="inline-block mr-[0.25em]"
-              initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{
-                duration: 0.5,
-                delay: i * 0.08,
-                ease: [0.28, 0.11, 0.32, 1],
-              }}
-            >
-              {word}
-            </motion.span>
-          ))}
+          One resume. Every role.
         </h1>
 
         {/* Sub-headline */}
-        <motion.p
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3, ease: [0.28, 0.11, 0.32, 1] }}
-          className="text-[19px] sm:text-[21px] leading-[1.38] text-ink-muted max-w-[680px] mb-9 font-normal"
-        >
+        <p className="text-[19px] sm:text-[21px] leading-[1.38] text-ink-muted max-w-[680px] mb-9 font-normal">
           Tailor your LaTeX resume to any job, using only what is true about you. Original formatting and preamble 100% locked.
-        </motion.p>
+        </p>
 
         {/* Call to Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.42, ease: [0.28, 0.11, 0.32, 1] }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-14 w-full sm:w-auto"
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-14 w-full sm:w-auto">
           <Link
             href="/workspace"
             className="w-full sm:w-auto min-h-[48px] px-8 py-3 rounded-pill bg-accent text-white text-[17px] font-medium hover:bg-accent-hover shadow-subtle inline-flex items-center justify-center gap-2 transition-all duration-fast ease-apple active:scale-[0.98]"
@@ -170,7 +141,7 @@ export function Hero() {
             <span>See how it works</span>
             <ChevronRight className="w-4 h-4" />
           </a>
-        </motion.div>
+        </div>
 
         {/* 3-Role Crossfade Switcher Pills */}
         <div className="flex items-center gap-2 mb-6 p-1 rounded-pill bg-surface border border-hairline shadow-subtle">
@@ -191,12 +162,7 @@ export function Hero() {
         </div>
 
         {/* Crossfading Resume Mockup (Apple Card with 20px radius) */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5, ease: [0.28, 0.11, 0.32, 1] }}
-          className="w-full max-w-[1040px] bg-canvas border border-hairline rounded-card shadow-paper p-4 sm:p-6 text-left relative overflow-hidden"
-        >
+        <div className="w-full max-w-[1040px] bg-canvas border border-hairline rounded-card shadow-paper p-4 sm:p-6 text-left relative overflow-hidden">
           {/* Window Chrome Header */}
           <div className="flex items-center justify-between pb-3.5 border-b border-hairline mb-5">
             <div className="flex items-center gap-2">
@@ -290,7 +256,7 @@ export function Hero() {
               </div>
             </motion.div>
           </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
