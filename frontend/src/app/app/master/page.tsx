@@ -87,12 +87,12 @@ export default function MasterResumePage() {
 
       const updatedSession: Partial<UserSessionState> = {
         candidateName: data.contact_name || file.name.replace(/\.[^/.]+$/, ""),
-        candidateEmail: data.contact_email || "candidate@example.com",
+        candidateEmail: data.contact_email || "",
         uploadedFileName: file.name,
         uploadedFileType: file.name.endsWith(".tex") ? "tex" : "pdf",
         rawResumeText: data.raw_latex || "",
-        detectedTemplate: data.template_id || "Jake's Resume",
-        parseConfidence: data.parse_confidence || 0.95,
+        detectedTemplate: data.template_id || "Standard Template",
+        parseConfidence: data.parse_confidence || 1.0,
         requiresSectionMapping: data.requires_section_mapping || false,
         evidenceBank: newEvidence,
       };
@@ -191,12 +191,13 @@ export default function MasterResumePage() {
   const confirmedCount = evidenceList.filter((e) => e.status === "confirmed").length;
   const extractedCount = evidenceList.filter((e) => e.status !== "confirmed").length;
 
-  const mockSections = [
-    { id: "sec_experience", name: "Experience", count: 6 },
-    { id: "sec_projects", name: "Projects", count: 3 },
-    { id: "sec_education", name: "Education", count: 2 },
-    { id: "sec_skills", name: "Technical Skills", count: 4 },
-  ];
+  const dynamicSections = Array.from(
+    new Set(evidenceList.map((e) => e.category || "Experience"))
+  ).map((cat) => ({
+    id: `sec_${cat.toLowerCase().replace(/\s+/g, "_")}`,
+    name: cat,
+    count: evidenceList.filter((e) => (e.category || "Experience") === cat).length,
+  }));
 
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-ink selection:bg-accent selection:text-white">
@@ -242,9 +243,9 @@ export default function MasterResumePage() {
               <div className="flex items-center justify-between pb-4 border-b border-hairline">
                 <div>
                   <h3 className="text-[15px] font-semibold text-ink">
-                    {session?.candidateName || "Elena Rostova"}
+                    {session?.candidateName || "Master Resume Document"}
                   </h3>
-                  <p className="text-[12px] text-ink-muted">{session?.candidateEmail || "elena@example.com"}</p>
+                  <p className="text-[12px] text-ink-muted">{session?.candidateEmail || (session?.rawResumeText ? "Verified Document" : "No resume uploaded yet")}</p>
                 </div>
                 <span className="text-[11px] font-mono px-2.5 py-1 rounded-pill bg-status-supported-bg text-status-supported-text border border-status-supported-text/20 font-medium">
                   LaTeX AST Active
@@ -303,30 +304,37 @@ export default function MasterResumePage() {
             </div>
 
             <div className="bg-surface border border-hairline rounded-card divide-y divide-hairline shadow-subtle overflow-hidden">
-              {mockSections.map((sec) => {
-                const isLocked = lockedSections.includes(sec.name);
-                return (
-                  <div
-                    key={sec.id}
-                    className="p-4 flex items-center justify-between gap-4 hover:bg-canvas/50 transition-colors"
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[14px] font-medium text-ink">{sec.name}</span>
-                        {isLocked ? (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-pill bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 inline-flex items-center gap-1">
-                            <Lock className="w-3 h-3" /> Locked Verbatim
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text border border-status-supported-text/20">
-                            Available for Tailoring
-                          </span>
-                        )}
+              {dynamicSections.length === 0 ? (
+                <div className="p-8 text-center space-y-2">
+                  <p className="text-[13px] text-ink-muted">
+                    No sections identified yet. Upload your LaTeX or PDF master resume to detect and lock sections.
+                  </p>
+                </div>
+              ) : (
+                dynamicSections.map((sec) => {
+                  const isLocked = lockedSections.includes(sec.name);
+                  return (
+                    <div
+                      key={sec.id}
+                      className="p-4 flex items-center justify-between gap-4 hover:bg-canvas/50 transition-colors"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[14px] font-medium text-ink">{sec.name}</span>
+                          {isLocked ? (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-pill bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 inline-flex items-center gap-1">
+                              <Lock className="w-3 h-3" /> Locked Verbatim
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text border border-status-supported-text/20">
+                              Available for Tailoring
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-ink-muted">
+                          {sec.count} recognized content items in master document
+                        </p>
                       </div>
-                      <p className="text-[11px] text-ink-muted">
-                        {sec.count} recognized content items in master document
-                      </p>
-                    </div>
 
                     <button
                       type="button"
@@ -351,7 +359,8 @@ export default function MasterResumePage() {
                     </button>
                   </div>
                 );
-              })}
+              })
+            )}
             </div>
           </div>
         </div>

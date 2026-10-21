@@ -1,19 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SplitScreenReview from "@/components/workspace/SplitScreenReview";
+import { loadUserSession, UserSessionState } from "@/lib/store";
 
 export default function ReviewDemoPage() {
+  const [session, setSession] = useState<UserSessionState | null>(null);
+
+  useEffect(() => {
+    setSession(loadUserSession());
+  }, []);
+
   return (
     <SplitScreenReview
-      candidateName="Marimuthu"
-      candidateEmail="marimuthu112005@gmail.com"
-      candidateLocation="San Francisco, CA"
-      targetRole="Senior Staff Backend Engineer"
-      onContinueToDownload={(reviewed) => {
-        alert(
-          `Review complete! All ${reviewed.length} changes reviewed and ready for download.`
-        );
+      candidateName={session?.candidateName || ""}
+      candidateEmail={session?.candidateEmail || ""}
+      targetRole={session?.targetRole || "Target Role"}
+      onContinueToDownload={() => {
+        window.location.href = "/export";
       }}
       onBackToStep1={() => {
         window.location.href = "/workspace";

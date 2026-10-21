@@ -25,11 +25,20 @@ export default function SiblingsPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const session = loadUserSession();
-    setSiblings(session.siblings || []);
-    setMasterName(session.uploadedFileName || (session.candidateName ? `${session.candidateName}_Resume.pdf` : "Master Resume"));
-    setEvidenceCount(session.evidenceBank?.length || 0);
-    setIsLoaded(true);
+    const sync = () => {
+      const session = loadUserSession();
+      setSiblings(session.siblings || []);
+      setMasterName(session.uploadedFileName || (session.candidateName ? `${session.candidateName}_Resume.pdf` : "Master Resume"));
+      setEvidenceCount(session.evidenceBank?.length || 0);
+      setIsLoaded(true);
+    };
+    sync();
+    window.addEventListener("slang_session_updated", sync);
+    window.addEventListener("tailorai_session_updated", sync);
+    return () => {
+      window.removeEventListener("slang_session_updated", sync);
+      window.removeEventListener("tailorai_session_updated", sync);
+    };
   }, []);
 
   const handleSync = (id: string) => {
@@ -121,8 +130,8 @@ export default function SiblingsPage() {
               When you tailor resumes for specific job descriptions, each approved version is saved as a tracked sibling linked to your master document.
             </p>
             <Link
-              href="/studio"
-              className="pill-btn pill-btn-primary px-7 py-2.5 text-[14px]"
+              href="/workspace"
+              className="pill-btn pill-btn-primary px-7 py-2.5 text-[14px] inline-flex items-center gap-1.5"
             >
               Tailor First Resume Sibling
               <ArrowRight className="w-4 h-4" />

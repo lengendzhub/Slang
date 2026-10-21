@@ -91,7 +91,7 @@ export default function MatchReportPage() {
 
                 <div className="flex items-center gap-6 self-center md:self-auto">
                   <ProgressRing
-                    progress={fitScore || 85}
+                    progress={fitScore || 0}
                     size={110}
                     strokeWidth={7}
                     label="Fit Rubric"

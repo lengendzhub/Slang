@@ -24,7 +24,7 @@ import { getApiBaseUrl } from "@/lib/apiConfig";
 export default function AccountPage() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [candidateEmail, setCandidateEmail] = useState("");
-  const [candidateName, setCandidateName] = useState("Candidate");
+  const [candidateName, setCandidateName] = useState("");
   const [isDark, setIsDark] = useState(false);
   const [purged, setPurged] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
@@ -83,11 +83,15 @@ export default function AccountPage() {
     window.dispatchEvent(new CustomEvent("slang_theme_changed", { detail: next }));
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     clearAuthSession();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
     setAuthUser(null);
-    setCandidateName("Candidate");
+    setCandidateName("");
     setCandidateEmail("");
+    window.location.href = "/signin";
   };
 
   const handleExportData = () => {

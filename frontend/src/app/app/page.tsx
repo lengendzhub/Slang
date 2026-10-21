@@ -23,8 +23,17 @@ export default function AppDashboardPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setSession(loadUserSession());
-    setIsLoaded(true);
+    const sync = () => {
+      setSession(loadUserSession());
+      setIsLoaded(true);
+    };
+    sync();
+    window.addEventListener("slang_session_updated", sync);
+    window.addEventListener("tailorai_session_updated", sync);
+    return () => {
+      window.removeEventListener("slang_session_updated", sync);
+      window.removeEventListener("tailorai_session_updated", sync);
+    };
   }, []);
 
   const hasMaster = Boolean(session?.rawResumeText && session.rawResumeText.trim());

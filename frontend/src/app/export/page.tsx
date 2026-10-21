@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FrostedNav } from "@/components/ui/FrostedNav";
 import { loadUserSession, saveUserSession, UserSessionState } from "@/lib/store";
 import { generateJdFilename } from "@/lib/filenameHelper";
+import { downloadResumePdf } from "@/lib/downloadResumePdf";
 import {
   Download,
   FileCode,
@@ -18,6 +19,7 @@ import {
   AlertCircle,
   UploadCloud,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 
 export default function ExportPage() {
@@ -25,6 +27,8 @@ export default function ExportPage() {
   const [savedSibling, setSavedSibling] = useState(false);
   const [session, setSession] = useState<UserSessionState | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   useEffect(() => {
     const s = loadUserSession();
@@ -54,25 +58,41 @@ export default function ExportPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = (format: "tex" | "pdf") => {
-    const fileContent = session?.rawResumeText || "% Tailored Resume\n\\documentclass{article}\n";
-    const blob = new Blob(
-      [format === "tex" ? fileContent : "Mock PDF binary stream"],
-      { type: format === "tex" ? "text/plain" : "application/pdf" }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
+  const handleDownload = async (format: "tex" | "pdf") => {
+    const fileContent = session?.rawResumeText || "";
     const safeName = generateJdFilename({
       candidateName,
       targetRole,
       targetCompany: session?.targetCompany,
       jdText: session?.targetJdText,
     });
-    a.download = `${safeName}.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+
+    if (format === "tex") {
+      const blob = new Blob([fileContent], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}.tex`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // Real PDF compilation via backend /exports/pdf
+    setIsDownloading(true);
+    setPdfError(null);
+    try {
+      await downloadResumePdf(fileContent, safeName);
+    } catch (err: any) {
+      console.error("PDF download error:", err);
+      const msg = err.message || "Failed to compile PDF. Please verify backend is running.";
+      setPdfError(msg);
+      alert(msg);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleSaveSibling = () => {
@@ -202,23 +222,40 @@ export default function ExportPage() {
                 <div className="space-y-2.5">
                   <button
                     onClick={() => handleDownload("pdf")}
-                    className="pill-btn pill-btn-primary w-full py-2.5 text-[14px] shadow-sm flex items-center justify-center gap-2"
+                    disabled={isDownloading}
+                    className="pill-btn pill-btn-primary w-full py-2.5 text-[14px] shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    <Download className="w-4 h-4" />
-                    Download Deliverable PDF
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Compiling Sandbox PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        <span>Download Deliverable PDF</span>
+                      </>
+                    )}
                   </button>
 
                   <button
                     onClick={() => handleDownload("tex")}
-                    className="pill-btn w-full py-2.5 text-[14px] bg-[var(--bg)] border border-[var(--line-light)] text-[var(--ink)] hover:bg-[var(--bg-alt)] flex items-center justify-center gap-2"
+                    className="pill-btn w-full py-2.5 text-[14px] bg-[var(--bg)] border border-[var(--line-light)] text-[var(--ink)] hover:bg-[var(--bg-alt)] flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <FileCode className="w-4 h-4 text-[var(--blue)]" />
                     Download Tailored .tex
                   </button>
 
+                  {pdfError && (
+                    <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-[12px] flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                      <span>{pdfError}</span>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleCopy}
-                    className="pill-btn w-full py-2 text-[12px] bg-transparent text-[var(--ink-2)] hover:text-[var(--ink)] flex items-center justify-center gap-1.5"
+                    className="pill-btn w-full py-2 text-[12px] bg-transparent text-[var(--ink-2)] hover:text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-[#34c759]" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copied ? "Copied source to clipboard" : "Copy Source Code"}</span>
@@ -233,7 +270,7 @@ export default function ExportPage() {
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[var(--blue)]" />
                   <span className="font-mono text-[13px] font-medium text-[var(--ink)]">
-                    {candidateName}_Tailored_Resume.pdf
+                    {candidateName || "Tailored"}_Resume.pdf
                   </span>
                 </div>
                 <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--bg-alt)] text-[var(--ink-2)]">
@@ -245,9 +282,9 @@ export default function ExportPage() {
               <div className="p-8 bg-white text-black rounded-xl border border-gray-200 shadow-sm font-serif min-h-[580px] text-[12px] leading-relaxed">
                 {/* Heading */}
                 <div className="text-center pb-4 border-b border-gray-300 mb-4">
-                  <h2 className="text-[20px] font-bold tracking-tight uppercase">{candidateName}</h2>
+                  <h2 className="text-[20px] font-bold tracking-tight uppercase">{candidateName || "Candidate Master"}</h2>
                   <div className="text-[11px] text-gray-600 mt-1">
-                    {[candidatePhone, candidateEmail, "San Francisco, CA"].filter(Boolean).join(" • ")}
+                    {[candidatePhone, candidateEmail].filter(Boolean).join(" • ") || "Verified Contact Records"}
                   </div>
                 </div>
 
@@ -257,8 +294,8 @@ export default function ExportPage() {
                     Professional Experience
                   </h3>
                   <div className="flex justify-between font-bold text-[11px]">
-                    <span>{targetRole}</span>
-                    <span>2022 – Present</span>
+                    <span>{targetRole || "Target Role"}</span>
+                    <span>Verified Career Record</span>
                   </div>
                   <ul className="list-disc pl-4 space-y-1 text-[11px] mt-1.5">
                     {acceptedDiffs.length > 0 ? (

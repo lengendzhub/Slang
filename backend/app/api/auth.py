@@ -160,11 +160,14 @@ async def signup(req: SignUpRequest):
 async def login(req: LoginRequest):
     email_clean = req.email.strip().lower()
     user = db_users.get(email_clean)
+    
+    # Generic error message to prevent account enumeration (Part 2 requirement)
+    invalid_creds_detail = "Invalid email or password."
     if not user:
-        raise HTTPException(status_code=401, detail="No account found with this email. Please sign up.")
+        raise HTTPException(status_code=401, detail=invalid_creds_detail)
 
-    if user.hashed_password != hash_password(req.password):
-        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
+    if not user.hashed_password or not hmac.compare_digest(user.hashed_password, hash_password(req.password)):
+        raise HTTPException(status_code=401, detail=invalid_creds_detail)
 
     token = create_jwt_token({"sub": user.id, "email": user.email, "name": user.name})
     return AuthResponse(

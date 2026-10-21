@@ -78,6 +78,96 @@ def health_check():
         "fact_validator": "active"
     }
 
+@app.get("/demo-samples")
+def get_demo_samples():
+    """
+    Returns authentic demo resume templates and real matching target job descriptions
+    for instant interactive demonstration and testing.
+    """
+    from pathlib import Path
+    
+    samples = []
+    
+    # 1. Software Engineer (Jake's Resume)
+    latex_se = ""
+    for p in [Path("templates/jakes_resume.tex"), Path("../templates/jakes_resume.tex"), Path("backend/templates/jakes_resume.tex")]:
+        if p.exists():
+            latex_se = p.read_text(encoding="utf-8")
+            break
+            
+    jd_se = ""
+    for p in [Path("templates/sample_jds/software_engineer.txt"), Path("../templates/sample_jds/software_engineer.txt"), Path("backend/templates/sample_jds/software_engineer.txt")]:
+        if p.exists():
+            jd_se = p.read_text(encoding="utf-8")
+            break
+            
+    if latex_se and jd_se:
+        samples.append({
+            "id": "demo_swe",
+            "title": "Senior Distributed Systems Engineer",
+            "company": "CloudScale Infrastructure",
+            "resume_name": "Jake Gutierrez (Software Engineer)",
+            "candidate_name": "Jake Gutierrez",
+            "candidate_email": "jake@alumni.neu.edu",
+            "mode": "Same Field",
+            "raw_latex": latex_se,
+            "jd_text": jd_se
+        })
+
+    # 2. Product Manager (Classic Resume)
+    latex_pm = ""
+    for p in [Path("templates/classic_resume.tex"), Path("../templates/classic_resume.tex"), Path("backend/templates/classic_resume.tex")]:
+        if p.exists():
+            latex_pm = p.read_text(encoding="utf-8")
+            break
+            
+    jd_pm = ""
+    for p in [Path("templates/sample_jds/product_manager.txt"), Path("../templates/sample_jds/product_manager.txt"), Path("backend/templates/sample_jds/product_manager.txt")]:
+        if p.exists():
+            jd_pm = p.read_text(encoding="utf-8")
+            break
+            
+    if latex_pm and jd_pm:
+        samples.append({
+            "id": "demo_pm",
+            "title": "Technical Product Manager",
+            "company": "DataPulse Technologies",
+            "resume_name": "Classic Template (Product Lead)",
+            "candidate_name": "Alex Morgan",
+            "candidate_email": "alex.morgan@alumni.edu",
+            "mode": "Career Pivot",
+            "raw_latex": latex_pm,
+            "jd_text": jd_pm
+        })
+
+    # 3. Business Analyst (Deedy Resume)
+    latex_ba = ""
+    for p in [Path("templates/deedy_resume.tex"), Path("../templates/deedy_resume.tex"), Path("backend/templates/deedy_resume.tex")]:
+        if p.exists():
+            latex_ba = p.read_text(encoding="utf-8")
+            break
+            
+    jd_ba = ""
+    for p in [Path("templates/sample_jds/business_analyst.txt"), Path("../templates/sample_jds/business_analyst.txt"), Path("backend/templates/sample_jds/business_analyst.txt")]:
+        if p.exists():
+            jd_ba = p.read_text(encoding="utf-8")
+            break
+            
+    if latex_ba and jd_ba:
+        samples.append({
+            "id": "demo_ba",
+            "title": "Business Analyst / Strategy & Ops",
+            "company": "Horizon Capital",
+            "resume_name": "Deedy Template (Strategy Analyst)",
+            "candidate_name": "Debarghya Das",
+            "candidate_email": "ddas@cornell.edu",
+            "mode": "Career Pivot",
+            "raw_latex": latex_ba,
+            "jd_text": jd_ba
+        })
+
+    return samples
+
 from app.core.pdf_extractor import PDFResumeExtractor
 from app.api.export_pdf import router as export_pdf_router
 from app.api.auth import router as auth_router
@@ -263,7 +353,7 @@ async def create_tailor_job(
         fit_rubric=rubric_score,
         diffs=valid_diffs,
         requirements=matched_reqs,
-        created_at="2026-10-14"
+        created_at=datetime.utcnow().strftime("%Y-%m-%d")
     )
 
     db_jobs[job_id] = job

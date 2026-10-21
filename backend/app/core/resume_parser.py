@@ -78,13 +78,13 @@ class ResumeParser:
             body = self.raw_latex
 
         # Extract contact information
-        contact_name = "Alex Morgan"
+        contact_name = ""
         name_match = re.search(r'\\textbf\{\\Huge\s*\\scshape\s*([^}]+)\}', self.raw_latex) or re.search(r'\\Huge\s*\\scshape\s*([^}\\]+)', self.raw_latex)
         if name_match:
             contact_name = name_match.group(1).strip()
 
         email_match = re.search(r'\\href\{mailto:([^}]+)\}', self.raw_latex)
-        contact_email = email_match.group(1) if email_match else "alex.morgan@email.com"
+        contact_email = email_match.group(1) if email_match else None
 
         phone_match = re.search(r'(\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4})', self.raw_latex)
         contact_phone = phone_match.group(1) if phone_match else None
@@ -201,7 +201,7 @@ class ResumeParser:
         elif total_bullets >= 1 or len(evidence_bank) >= 2:
             confidence += 0.20
 
-        if contact_name and contact_name not in ["Alex Morgan", "Candidate"]:
+        if contact_name and contact_name.strip().lower() not in ["candidate", ""]:
             confidence += 0.15
         else:
             confidence += 0.05

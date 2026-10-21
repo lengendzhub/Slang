@@ -73,104 +73,17 @@ export interface SplitScreenReviewProps {
   standalone?: boolean; // When rendered standalone with top header
 }
 
-// 3 Realistic Experience Diffs matching the prompt specifications
-const DEFAULT_CHANGES: BulletChange[] = [
-  {
-    id: "ev_exp_1",
-    section: "Experience",
-    roleTitle: "Senior Software Engineer",
-    company: "Distributed Cloud Labs",
-    dateRange: "2023 – Present",
-    originalText:
-      "Collaborated with the CSE team to optimize backend APIs and wrote Python scripts for server monitoring.",
-    proposedText:
-      "Architected high-throughput Kafka event streaming pipeline in Go, reducing p99 processing latency by 38% across 10M+ daily events.",
-    charBudget: 160,
-    matchType: "direct",
-    reason:
-      "Highlighted distributed streaming architectures and low-latency systems demanded by the senior backend specification.",
-    evidenceId: "ev_exp_1",
-    evidenceSourceQuote:
-      "Master Resume (Exp, Line 42): 'Collaborated with the CSE team to optimize backend APIs and wrote Python scripts...'",
-    decision: "pending",
-  },
-  {
-    id: "ev_exp_2",
-    section: "Experience",
-    roleTitle: "Senior Software Engineer",
-    company: "Distributed Cloud Labs",
-    dateRange: "2023 – Present",
-    originalText:
-      "Assisted senior engineers in database maintenance and ran SQL queries for bug reports.",
-    proposedText:
-      "Led multi-region PostgreSQL failover migration and implemented pgvector indexing, maintaining 99.99% query uptime.",
-    charBudget: 155,
-    matchType: "direct",
-    reason:
-      "Demonstrates mission-critical relational database reliability and high availability engineering without overstating responsibility.",
-    evidenceId: "ev_exp_2",
-    evidenceSourceQuote:
-      "Master Resume (Exp, Line 48): 'Assisted senior engineers in database maintenance and ran SQL queries...'",
-    decision: "pending",
-  },
-  {
-    id: "ev_exp_3",
-    section: "Experience",
-    roleTitle: "Senior Software Engineer",
-    company: "Distributed Cloud Labs",
-    dateRange: "2023 – Present",
-    originalText:
-      "Attended sprint standups and updated Jira tickets with sprint tasks.",
-    proposedText:
-      "Spearheaded bi-weekly technical sprint planning with product and QA leads, formalizing strict API contract acceptance criteria.",
-    charBudget: 150,
-    matchType: "transferable",
-    reason:
-      "Reframes task updates into proactive cross-functional technical leadership and API contract governance.",
-    evidenceId: "ev_exp_3",
-    evidenceSourceQuote:
-      "Master Resume (Exp, Line 54): 'Attended sprint standups and updated Jira tickets with sprint tasks.'",
-    decision: "pending",
-  },
-];
-
-// 26 Realistic Job Requirements matching 26/26 requirements matched (100% truthful)
-const DEFAULT_26_REQUIREMENTS: JDRequirement[] = [
-  { id: "req_1", text: "High-throughput distributed systems architecture (Go / Python)", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_1" },
-  { id: "req_2", text: "Kafka event streaming & real-time pub/sub pipelines", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_1" },
-  { id: "req_3", text: "Relational database clustering & PostgreSQL query tuning", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_2" },
-  { id: "req_4", text: "Vector database indexing & semantic retrieval (pgvector)", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_2" },
-  { id: "req_5", text: "Cross-functional technical leadership & sprint governance", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_3" },
-  { id: "req_6", text: "Strict API contract design (REST, gRPC, Protobuf)", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_3" },
-  { id: "req_7", text: "p99 latency profiling & microservice performance tuning", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_1" },
-  { id: "req_8", text: "Zero-downtime database schema migrations & failover", category: "Essential", status: "direct", linkedEvidenceId: "ev_exp_2" },
-  { id: "req_9", text: "Automated CI/CD pipelines & containerized deployments", category: "Essential", status: "direct" },
-  { id: "req_10", text: "Infrastructure as Code (Terraform / Docker / Kubernetes)", category: "Essential", status: "direct" },
-  { id: "req_11", text: "Microservices observability (OpenTelemetry, Prometheus, Grafana)", category: "Essential", status: "direct" },
-  { id: "req_12", text: "Cloud platform engineering (AWS / GCP core primitives)", category: "Essential", status: "direct" },
-  { id: "req_13", text: "Defensive programming, unit testing & integration fixtures", category: "Essential", status: "direct" },
-  { id: "req_14", text: "Concurrency models, race condition mitigation & mutexes", category: "Essential", status: "direct" },
-  { id: "req_15", text: "High availability SLA management (99.99% uptime)", category: "Essential", status: "direct" },
-  { id: "req_16", text: "Data serialization, schema registry & message versioning", category: "Essential", status: "direct" },
-  { id: "req_17", text: "Root cause analysis & production post-mortem leadership", category: "Essential", status: "direct" },
-  { id: "req_18", text: "Distributed caching strategies (Redis cluster, write-through)", category: "Essential", status: "direct" },
-  { id: "req_19", text: "Secure credential management & mTLS communication", category: "Essential", status: "direct" },
-  { id: "req_20", text: "Clean architecture, SOLID patterns & domain-driven design", category: "Essential", status: "direct" },
-  { id: "req_21", text: "Code review standards & engineering mentorship", category: "Essential", status: "direct" },
-  { id: "req_22", text: "Git trunk-based development & semantic release management", category: "Essential", status: "direct" },
-  { id: "req_23", text: "System load testing & chaos engineering experiments", category: "Essential", status: "direct" },
-  { id: "req_24", text: "Network protocol troubleshooting (TCP, HTTP/2, WebSocket)", category: "Essential", status: "direct" },
-  { id: "req_25", text: "Technical documentation & RFC specification authorship", category: "Essential", status: "direct" },
-  { id: "req_26", text: "ATS keyword alignment & verified evidence validation", category: "Essential", status: "direct" },
-];
+// Clean empty fallbacks - only real data from backend/session is rendered
+const DEFAULT_CHANGES: BulletChange[] = [];
+const DEFAULT_26_REQUIREMENTS: JDRequirement[] = [];
 
 export default function SplitScreenReview({
   initialChanges,
   initialRequirements,
-  candidateName = "Marimuthu",
-  candidateEmail = "marimuthu112005@gmail.com",
-  candidateLocation = "San Francisco, CA",
-  targetRole = "Senior Staff Backend Engineer",
+  candidateName = "",
+  candidateEmail = "",
+  candidateLocation = "",
+  targetRole = "Target Role",
   rawLatex,
   onContinueToDownload,
   onBackToStep1,
@@ -179,7 +92,7 @@ export default function SplitScreenReview({
   const [changes, setChanges] = useState<BulletChange[]>(
     initialChanges && initialChanges.length > 0 ? initialChanges : DEFAULT_CHANGES
   );
-  const [activeChangeId, setActiveChangeId] = useState<string>(changes[0]?.id || "ev_exp_1");
+  const [activeChangeId, setActiveChangeId] = useState<string>(changes[0]?.id || "");
   const [viewMode, setViewMode] = useState<"paper" | "latex">("paper");
   const [mobileTab, setMobileTab] = useState<"changes" | "report" | "source">("changes");
   const [preambleLocked, setPreambleLocked] = useState<boolean>(true);
@@ -527,41 +440,70 @@ export default function SplitScreenReview({
                     </span>
                   </div>
 
-                  {/* Role & Company Subheading */}
-                  <div className="flex items-baseline justify-between text-xs border-b border-white/[0.04] pb-1.5 text-zinc-400">
-                    <div>
-                      <strong className="text-zinc-200 font-semibold text-[13px]">
-                        Distributed Cloud Labs
-                      </strong>{" "}
-                      — Senior Software Engineer
+                  {changes.length === 0 ? (
+                    <div className="text-center py-12 px-4 space-y-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+                      <div className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/[0.1] text-zinc-400 mx-auto flex items-center justify-center">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-semibold text-white">
+                          No Sentence Modifications Proposed Yet
+                        </h4>
+                        <p className="text-xs text-zinc-400 max-w-[380px] mx-auto mt-1 leading-relaxed">
+                          Upload your master resume in Step 1 and provide a target job description to generate verifiable sentence modifications.
+                        </p>
+                      </div>
+                      {onBackToStep1 && (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={onBackToStep1}
+                            className="px-5 py-2 rounded-full bg-accent text-white text-xs font-medium hover:bg-accent-hover transition-all cursor-pointer shadow-subtle"
+                          >
+                            Return to Step 1
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <span className="font-mono text-zinc-500">2023 – Present</span>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Role & Company Subheading */}
+                      <div className="flex items-baseline justify-between text-xs border-b border-white/[0.04] pb-1.5 text-zinc-400">
+                        <div>
+                          <strong className="text-zinc-200 font-semibold text-[13px]">
+                            {changes[0]?.company || targetRole}
+                          </strong>{" "}
+                          {changes[0]?.roleTitle ? `— ${changes[0].roleTitle}` : ""}
+                        </div>
+                        <span className="font-mono text-zinc-500">{changes[0]?.dateRange || ""}</span>
+                      </div>
 
-                  {/* Redesigned Zero-Overlap Inline Diff Review Cards */}
-                  <div className="space-y-3.5 pt-1">
-                    {changes.map((change) => {
-                      const diag = atsReport.bulletDiagnostics.find((b) => b.diffId === change.id);
-                      return (
-                        <RedesignedDiffCard
-                          key={change.id}
-                          change={change}
-                          diag={diag}
-                          isActive={activeChangeId === change.id}
-                          isEditing={editingId === change.id}
-                          draftText={draftText}
-                          onSelect={() => setActiveChangeId(change.id)}
-                          onAccept={() => handleDecision(change.id, "accepted")}
-                          onReject={() => handleDecision(change.id, "rejected")}
-                          onReset={() => handleReset(change.id)}
-                          onStartEdit={() => startEditing(change)}
-                          onChangeDraft={setDraftText}
-                          onSaveEdit={() => saveEdit(change.id)}
-                          onCancelEdit={() => setEditingId(null)}
-                        />
-                      );
-                    })}
-                  </div>
+                      {/* Redesigned Zero-Overlap Inline Diff Review Cards */}
+                      <div className="space-y-3.5 pt-1">
+                        {changes.map((change) => {
+                          const diag = atsReport.bulletDiagnostics.find((b) => b.diffId === change.id);
+                          return (
+                            <RedesignedDiffCard
+                              key={change.id}
+                              change={change}
+                              diag={diag}
+                              isActive={activeChangeId === change.id}
+                              isEditing={editingId === change.id}
+                              draftText={draftText}
+                              onSelect={() => setActiveChangeId(change.id)}
+                              onAccept={() => handleDecision(change.id, "accepted")}
+                              onReject={() => handleDecision(change.id, "rejected")}
+                              onReset={() => handleReset(change.id)}
+                              onStartEdit={() => startEditing(change)}
+                              onChangeDraft={setDraftText}
+                              onSaveEdit={() => saveEdit(change.id)}
+                              onCancelEdit={() => setEditingId(null)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (

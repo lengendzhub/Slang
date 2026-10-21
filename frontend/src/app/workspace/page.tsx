@@ -32,9 +32,9 @@ export default function WorkspacePage() {
   const [evidenceModalOpen, setEvidenceModalOpen] = useState(false);
 
   // Workspace Data
-  const [candidateName, setCandidateName] = useState("Candidate");
-  const [candidateEmail, setCandidateEmail] = useState("candidate@example.com");
-  const [targetRole, setTargetRole] = useState("Target Role");
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateEmail, setCandidateEmail] = useState("");
+  const [targetRole, setTargetRole] = useState("");
   const [targetCompany, setTargetCompany] = useState("");
   const [diffs, setDiffs] = useState<BulletChange[]>([]);
   const [requirements, setRequirements] = useState<JDRequirement[]>([]);
@@ -44,16 +44,51 @@ export default function WorkspacePage() {
   useEffect(() => {
     const syncSession = () => {
       const session = loadUserSession();
-      setCandidateName(session.candidateName || "Candidate");
-      setCandidateEmail(session.candidateEmail || "candidate@example.com");
-      setTargetRole(session.targetRole || "Target Role");
+      setCandidateName(session.candidateName || "");
+      setCandidateEmail(session.candidateEmail || "");
+      setTargetRole(session.targetRole || "");
       setTargetCompany(session.targetCompany || "");
       setRawLatex(session.rawResumeText || "");
-      setJdText(session.targetJdText || "");
-      if (!session.diffs || session.diffs.length === 0) {
+      if (session.diffs && session.diffs.length > 0) {
+        setDiffs(
+          session.diffs.map((d: any) => ({
+            id: d.id,
+            section: d.section || "Experience",
+            roleTitle: d.roleTitle,
+            company: d.company,
+            dateRange: d.dateRange,
+            originalText: d.originalText,
+            proposedText: d.rewrittenText || d.proposedText || "",
+            editedText: d.editedText,
+            charBudget: d.charBudget || d.newLength || (d.rewrittenText || d.proposedText || "").length,
+            matchType: (d.matchType || (d.status === "supported" ? "direct" : "transferable")) as "direct" | "transferable",
+            reason: d.reason || "",
+            evidenceId: d.evidenceId || "",
+            evidenceSourceQuote: d.evidenceSourceQuote || d.originalText || "",
+            decision: (d.decision || "accepted") as "pending" | "accepted" | "rejected" | "edited",
+          }))
+        );
+      } else {
         setDiffs([]);
       }
-      if (!session.requirements || session.requirements.length === 0) {
+
+      if (session.requirements && session.requirements.length > 0) {
+        setRequirements(
+          session.requirements.map((r: any) => ({
+            id: r.id,
+            text: r.text,
+            category: r.category === "Preferred" ? "Preferred" : "Essential",
+            status:
+              r.classification === "Direct" || r.status === "direct"
+                ? "direct"
+                : r.classification === "Transferable" || r.status === "transferable"
+                ? "transferable"
+                : "missing",
+            linkedEvidenceId: r.matchedEvidenceId || r.linkedEvidenceId,
+            note: r.learningTip || r.note,
+          }))
+        );
+      } else {
         setRequirements([]);
       }
     };
@@ -69,7 +104,7 @@ export default function WorkspacePage() {
 
   const handleStartOver = () => {
     setCurrentStep(1);
-    setTargetRole("Target Role");
+    setTargetRole("");
     setTargetCompany("");
     setJdText("");
     setDiffs([]);
@@ -95,9 +130,9 @@ export default function WorkspacePage() {
     } catch {
       // client-side purge succeeds
     }
-    setCandidateName("Candidate");
-    setCandidateEmail("candidate@example.com");
-    setTargetRole("Target Role");
+    setCandidateName("");
+    setCandidateEmail("");
+    setTargetRole("");
     setTargetCompany("");
     setRawLatex("");
     setJdText("");
@@ -325,10 +360,12 @@ export default function WorkspacePage() {
 
       // Transition smoothly to Step 2
       setCurrentStep(2);
-    } catch (err) {
-      console.warn("Tailor backend unavailable, using deterministic fallbacks:", err);
-      // Move to step 2 with deterministic fallbacks
-      setCurrentStep(2);
+    } catch (err: any) {
+      console.error("Tailor draft generation error:", err);
+      setProcessingStatus("error");
+      const msg = err.message || "Failed to generate tailored draft. Please verify backend is running.";
+      setAlignError(msg);
+      alert(msg);
     } finally {
       setIsProcessing(false);
     }

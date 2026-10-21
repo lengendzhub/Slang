@@ -28,9 +28,18 @@ export default function EvidenceBankPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const session = loadUserSession();
-    setEvidenceList(session.evidenceBank || []);
-    setIsLoaded(true);
+    const sync = () => {
+      const session = loadUserSession();
+      setEvidenceList(session.evidenceBank || []);
+      setIsLoaded(true);
+    };
+    sync();
+    window.addEventListener("slang_session_updated", sync);
+    window.addEventListener("tailorai_session_updated", sync);
+    return () => {
+      window.removeEventListener("slang_session_updated", sync);
+      window.removeEventListener("tailorai_session_updated", sync);
+    };
   }, []);
 
   const handleDelete = (id: string) => {
@@ -193,10 +202,10 @@ export default function EvidenceBankPage() {
               Upload your PDF resume in Studio to automatically index your achievements into verified Evidence Bank records.
             </p>
             <Link
-              href="/studio"
-              className="pill-btn pill-btn-primary px-7 py-2.5 text-[14px]"
+              href="/workspace"
+              className="pill-btn pill-btn-primary px-7 py-2.5 text-[14px] inline-flex items-center gap-1.5"
             >
-              Upload PDF in Studio
+              Upload Resume in Workspace
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
