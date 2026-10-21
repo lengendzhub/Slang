@@ -27,5 +27,10 @@ export function getApiBaseUrl(): string {
     }
   }
 
+  // Server-side in production (e.g. Vercel serverless function where window is undefined)
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    return "https://slang-backend.onrender.com";
+  }
+
   return "http://localhost:8000";
 }

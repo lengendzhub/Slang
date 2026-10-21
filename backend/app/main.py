@@ -45,6 +45,12 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+from app.api.auth import router as auth_router
+from app.api.export_pdf import router as export_pdf_router
+
+app.include_router(auth_router)
+app.include_router(export_pdf_router)
+
 # In-memory session store (with Postgres/pgvector architecture specification)
 db_resumes: Dict[str, ParsedResume] = {}
 db_jds: Dict[str, JDAnalysis] = {}
