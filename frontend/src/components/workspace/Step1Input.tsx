@@ -24,6 +24,7 @@ interface Step1InputProps {
   isProcessing?: boolean;
   hasExistingResume?: boolean;
   initialJdText?: string;
+  onLoadSample?: () => void;
 }
 
 export function Step1Input({
@@ -33,6 +34,7 @@ export function Step1Input({
   isProcessing = false,
   hasExistingResume = false,
   initialJdText = "",
+  onLoadSample,
 }: Step1InputProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jdText, setJdText] = useState(initialJdText);
@@ -94,6 +96,18 @@ export function Step1Input({
         <p className="text-[14px] text-ink-muted max-w-[540px] mx-auto">
           Upload your existing LaTeX (.tex) or PDF resume. Your original styling, margins, and preamble are 100% locked.
         </p>
+        {onLoadSample && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={onLoadSample}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-accent/10 text-accent hover:bg-accent/20 transition-all border border-accent/20 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Try with 1-Click Sample Resume & Suggestions
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
