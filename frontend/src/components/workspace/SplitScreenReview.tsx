@@ -93,9 +93,11 @@ export default function SplitScreenReview({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState<string>("");
   const [mobileRubricOpen, setMobileRubricOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setIsDark(getEffectiveTheme() === "dark");
 
     const handleThemeChange = (e: Event) => {
@@ -248,11 +250,12 @@ export default function SplitScreenReview({
           <button
             type="button"
             onClick={handleToggleTheme}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label="Toggle theme"
+            title="Toggle theme"
+            suppressHydrationWarning
             className="w-8 h-8 rounded-full inline-flex items-center justify-center text-ink-secondary hover:text-ink hover:bg-surface active:scale-95 transition-all cursor-pointer"
           >
-            {isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
+            {mounted && isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
           </button>
 
           <SegmentedControl

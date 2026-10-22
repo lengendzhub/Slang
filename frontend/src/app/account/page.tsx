@@ -29,12 +29,14 @@ export default function AccountPage() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [candidateEmail, setCandidateEmail] = useState("");
   const [candidateName, setCandidateName] = useState("");
+  const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [purged, setPurged] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
   const [deleteSheetOpen, setDeleteSheetOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const user = getCurrentUser();
     setAuthUser(user);
     if (user) {
@@ -227,9 +229,10 @@ export default function AccountPage() {
             <button
               type="button"
               onClick={toggleAppearance}
+              suppressHydrationWarning
               className="pill-btn pill-btn-secondary px-4 py-2 text-[13px] gap-2 min-h-[36px]"
             >
-              {isDark ? (
+              {mounted && isDark ? (
                 <>
                   <Sun className="w-4 h-4 text-warning" />
                   <span>Switch to Light</span>
