@@ -70,7 +70,6 @@ export interface SplitScreenReviewProps {
   rawLatex?: string;
   onContinueToDownload?: (reviewedChanges: BulletChange[]) => void;
   onBackToStep1?: () => void;
-  onLoadSample?: () => void;
   standalone?: boolean; // When rendered standalone with top header
 }
 
@@ -88,7 +87,6 @@ export default function SplitScreenReview({
   rawLatex,
   onContinueToDownload,
   onBackToStep1,
-  onLoadSample,
   standalone = false,
 }: SplitScreenReviewProps) {
   const [changes, setChanges] = useState<BulletChange[]>(
@@ -462,26 +460,17 @@ export default function SplitScreenReview({
                           Upload your master resume in Step 1 and provide a target job description to generate verifiable sentence modifications.
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                        {onLoadSample && (
-                          <button
-                            type="button"
-                            onClick={onLoadSample}
-                            className="px-5 py-2.5 rounded-full bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            ✨ Load Sample Resume & Suggestions
-                          </button>
-                        )}
-                        {onBackToStep1 && (
+                      {onBackToStep1 && (
+                        <div className="pt-2">
                           <button
                             type="button"
                             onClick={onBackToStep1}
-                            className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-white text-xs font-medium hover:bg-white/15 transition-all cursor-pointer"
+                            className="px-5 py-2.5 rounded-full bg-accent text-white text-xs font-semibold hover:bg-accent-hover transition-all cursor-pointer shadow-subtle hover:scale-[1.02] active:scale-[0.98]"
                           >
-                            ← Return to Step 1
+                            Return to Step 1
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <>

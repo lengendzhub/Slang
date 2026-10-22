@@ -167,59 +167,6 @@ export default function WorkspacePage() {
     });
   };
 
-  const handleLoadSample = () => {
-    const sampleCandidateName = "Alex Chen";
-    const sampleCandidateEmail = "alex.chen@example.com";
-    const sampleRole = "Staff Infrastructure & Distributed Systems Engineer";
-    const sampleCompany = "CloudScale AI";
-    const sampleLatex = SAMPLE_MASTER_LATEX;
-    const sampleJd = SAMPLE_TARGET_JD;
-    const sampleDiffs = SAMPLE_DIFFS;
-    const sampleReqs = SAMPLE_REQUIREMENTS;
-
-    setCandidateName(sampleCandidateName);
-    setCandidateEmail(sampleCandidateEmail);
-    setTargetRole(sampleRole);
-    setTargetCompany(sampleCompany);
-    setRawLatex(sampleLatex);
-    setJdText(sampleJd);
-    setDiffs(sampleDiffs);
-    setRequirements(sampleReqs);
-
-    saveUserSession({
-      candidateName: sampleCandidateName,
-      candidateEmail: sampleCandidateEmail,
-      targetRole: sampleRole,
-      targetCompany: sampleCompany,
-      rawResumeText: sampleLatex,
-      targetJdText: sampleJd,
-      diffs: sampleDiffs.map((d) => ({
-        id: d.id,
-        section: d.section,
-        originalText: d.originalText,
-        rewrittenText: d.proposedText,
-        reason: d.reason,
-        evidenceId: d.evidenceId,
-        claimType: "bullet",
-        status: d.matchType === "direct" ? "supported" : "needs_confirmation",
-        decision: d.decision,
-        originalLength: d.originalText.length,
-        newLength: d.proposedText.length,
-        fitsBudget: true,
-      })),
-      requirements: sampleReqs.map((r) => ({
-        id: r.id,
-        text: r.text,
-        category: r.category === "Preferred" ? "Preferred" : "Essential",
-        classification: r.status === "direct" ? "Direct" : "Transferable",
-        matchedEvidenceId: r.linkedEvidenceId,
-        learningTip: r.note,
-      })),
-    });
-
-    setCurrentStep(2);
-  };
-
   const handleGenerateDraft = async ({
     file,
     jdText,
@@ -661,7 +608,6 @@ export default function WorkspacePage() {
             isProcessing={isProcessing}
             hasExistingResume={Boolean(rawLatex && rawLatex.trim())}
             initialJdText={jdText}
-            onLoadSample={handleLoadSample}
           />
         )}
 
@@ -676,7 +622,6 @@ export default function WorkspacePage() {
             rawLatex={rawLatex}
             onContinueToDownload={handleContinueToDownload}
             onBackToStep1={() => setCurrentStep(1)}
-            onLoadSample={handleLoadSample}
           />
         )}
 
