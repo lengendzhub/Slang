@@ -6,6 +6,12 @@ import { usePathname } from "next/navigation";
 import { Moon, Sun, Menu, X, ArrowRight, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentUser, clearAuthSession, AuthUser } from "@/lib/authStore";
+import {
+  getEffectiveTheme,
+  applyTheme,
+  toggleTheme as executeToggleTheme,
+  THEME_CHANGE_EVENT,
+} from "@/lib/theme";
 
 const NAV_LINKS = [
   { label: "Workspace", href: "/workspace" },
@@ -35,26 +41,32 @@ export function FrostedNav() {
 
   // Sync and toggle theme
   useEffect(() => {
-    const savedTheme = localStorage.getItem("slang_theme");
-    if (savedTheme === "dark") {
-      setIsDark(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setIsDark(false);
-      document.documentElement.classList.remove("dark");
-    }
+    setIsDark(getEffectiveTheme() === "dark");
 
     const handleThemeChange = (e: Event) => {
       const customEvent = e as CustomEvent<boolean>;
       if (typeof customEvent.detail === "boolean") {
         setIsDark(customEvent.detail);
       } else {
-        setIsDark(localStorage.getItem("slang_theme") === "dark");
+        setIsDark(getEffectiveTheme() === "dark");
       }
     };
 
-    window.addEventListener("slang_theme_changed", handleThemeChange);
-    return () => window.removeEventListener("slang_theme_changed", handleThemeChange);
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+
+    // Listen to OS preference changes if no manual override is saved
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem("slang_theme")) {
+        applyTheme(e.matches ? "dark" : "light");
+      }
+    };
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
   }, []);
 
   // Track scroll position: gain hairline border after 8px of scroll
@@ -105,16 +117,8 @@ export function FrostedNav() {
   }, [pathname]);
 
   const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("slang_theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("slang_theme", "light");
-    }
-    window.dispatchEvent(new CustomEvent("slang_theme_changed", { detail: next }));
+    const nextTheme = executeToggleTheme();
+    setIsDark(nextTheme === "dark");
   };
 
   return (
@@ -178,10 +182,11 @@ export function FrostedNav() {
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label="Toggle dark mode"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             className="w-9 h-9 rounded-full inline-flex items-center justify-center text-ink-secondary hover:text-ink hover:bg-surface active:scale-95 transition-all cursor-pointer"
           >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {user ? (

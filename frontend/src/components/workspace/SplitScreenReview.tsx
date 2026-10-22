@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
@@ -13,6 +13,8 @@ import {
   ArrowRight,
   AlertCircle,
   Layers,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   evaluateResumeATS,
@@ -21,6 +23,11 @@ import {
   ATSConfig,
 } from "@/lib/atsEngine";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import {
+  getEffectiveTheme,
+  toggleTheme as executeToggleTheme,
+  THEME_CHANGE_EVENT,
+} from "@/lib/theme";
 
 // --- Types matching Backend Schema ---
 export type MatchType = "direct" | "transferable";
@@ -86,6 +93,28 @@ export default function SplitScreenReview({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState<string>("");
   const [mobileRubricOpen, setMobileRubricOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(getEffectiveTheme() === "dark");
+
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<boolean>;
+      if (typeof customEvent.detail === "boolean") {
+        setIsDark(customEvent.detail);
+      } else {
+        setIsDark(getEffectiveTheme() === "dark");
+      }
+    };
+
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+    return () => window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+  }, []);
+
+  const handleToggleTheme = () => {
+    const nextTheme = executeToggleTheme();
+    setIsDark(nextTheme === "dark");
+  };
 
   // Collapsible Rubric Groups
   const [directOpen, setDirectOpen] = useState(true);
@@ -214,8 +243,18 @@ export default function SplitScreenReview({
           </span>
         </div>
 
-        {/* View Mode Toggle: Paper View vs .tex Source */}
-        <div className="flex items-center gap-3">
+        {/* View Mode Toggle: Paper View vs .tex Source + Theme Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleToggleTheme}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            className="w-8 h-8 rounded-full inline-flex items-center justify-center text-ink-secondary hover:text-ink hover:bg-surface active:scale-95 transition-all cursor-pointer"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           <SegmentedControl
             options={[
               { id: "paper", label: "Paper View" },

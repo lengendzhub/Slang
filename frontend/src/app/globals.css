@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, [data-theme="dark"], .dark *));
+
 @theme {
   --breakpoint-xs: 320px;
   --breakpoint-sm: 480px;
@@ -10,7 +12,10 @@
 }
 
 @layer base {
-  :root {
+  :root,
+  :root.light,
+  html.light,
+  [data-theme="light"] {
     /* Apple Light Mode Palette */
     --bg: #FFFFFF;
     --bg-alt: #F5F5F7;
@@ -58,11 +63,13 @@
     --sab: env(safe-area-inset-bottom, 0px);
     --sal: env(safe-area-inset-left, 0px);
     --sar: env(safe-area-inset-right, 0px);
+
+    color-scheme: light;
   }
 
-  /* Automatic Dark Mode + Manual .dark class */
+  /* Automatic Dark Mode if OS prefers dark and user hasn't forced light */
   @media (prefers-color-scheme: dark) {
-    :root:not(.light) {
+    :root:not(.light):not([data-theme="light"]) {
       --bg: #000000;
       --bg-alt: #1D1D1F;
       --ink: #F5F5F7;
@@ -90,10 +97,16 @@
       --shadow-apple: 0 4px 24px rgba(0, 0, 0, 0.40);
       --shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.30);
       --shadow-paper: 0 4px 24px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.30);
+
+      color-scheme: dark;
     }
   }
 
-  .dark {
+  /* Explicit Dark Mode */
+  :root.dark,
+  html.dark,
+  .dark,
+  [data-theme="dark"] {
     --bg: #000000;
     --bg-alt: #1D1D1F;
     --ink: #F5F5F7;
@@ -121,6 +134,44 @@
     --shadow-apple: 0 4px 24px rgba(0, 0, 0, 0.40);
     --shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.30);
     --shadow-paper: 0 4px 24px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.30);
+
+    color-scheme: dark;
+  }
+
+  /* Explicit Light Mode Override (Highest specificity, defeats OS dark mode) */
+  :root.light,
+  html.light,
+  .light,
+  [data-theme="light"] {
+    --bg: #FFFFFF;
+    --bg-alt: #F5F5F7;
+    --ink: #1D1D1F;
+    --ink-secondary: #6E6E73;
+    --ink-tertiary: #86868B;
+    --separator: rgba(0, 0, 0, 0.08);
+    --link: #0066CC;
+    --accent: #0071E3;
+    --accent-hover: #0077ED;
+
+    --diff-removed-bg: rgba(255, 59, 48, 0.08);
+    --diff-removed-border: rgba(255, 59, 48, 0.20);
+    --diff-removed-text: #6E6E73;
+    --diff-added-bg: rgba(52, 199, 89, 0.10);
+    --diff-added-border: rgba(52, 199, 89, 0.25);
+    --diff-added-text: #1D7D34;
+
+    --status-supported-text: #1D7D34;
+    --status-supported-bg: #EAFBE7;
+    --status-transferable-text: #B25000;
+    --status-transferable-bg: #FFF5EB;
+    --status-missing-text: #D70015;
+    --status-missing-bg: #FFEFEB;
+
+    --shadow-apple: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --shadow-subtle: 0 2px 12px rgba(0, 0, 0, 0.04);
+    --shadow-paper: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    color-scheme: light;
   }
 
   html, body {
@@ -128,6 +179,8 @@
     max-width: 100vw;
     min-height: 100dvh;
     scroll-behavior: smooth;
+    background-color: var(--bg-alt);
+    color: var(--ink);
   }
 
   body {
@@ -138,6 +191,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    transition: background-color 150ms ease, color 150ms ease;
   }
 
   /* Prevent iOS Safari auto-zoom on input focus */
@@ -288,18 +342,28 @@
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--separator);
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
-.dark .frosted-glass {
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not([data-theme="light"]) .frosted-glass {
+    background-color: rgba(29, 29, 31, 0.72);
+    border-bottom: 1px solid var(--separator);
+  }
+}
+
+.dark .frosted-glass,
+[data-theme="dark"] .frosted-glass,
+html.dark .frosted-glass {
   background-color: rgba(29, 29, 31, 0.72);
   border-bottom: 1px solid var(--separator);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) .frosted-glass {
-    background-color: rgba(29, 29, 31, 0.72);
-    border-bottom: 1px solid var(--separator);
-  }
+.light .frosted-glass,
+[data-theme="light"] .frosted-glass,
+html.light .frosted-glass {
+  background-color: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid var(--separator);
 }
 
 /* Focus Ring: 2px accent with 2px offset */

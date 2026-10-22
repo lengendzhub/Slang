@@ -19,6 +19,11 @@ import {
 import { loadUserSession, clearUserSession } from "@/lib/store";
 import { getCurrentUser, clearAuthSession, AuthUser } from "@/lib/authStore";
 import { getApiBaseUrl } from "@/lib/apiConfig";
+import {
+  getEffectiveTheme,
+  toggleTheme as executeToggleTheme,
+  THEME_CHANGE_EVENT,
+} from "@/lib/theme";
 
 export default function AccountPage() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
@@ -41,35 +46,26 @@ export default function AccountPage() {
       if (session.candidateName) setCandidateName(session.candidateName);
     }
 
-    const savedTheme = localStorage.getItem("slang_theme");
-    setIsDark(savedTheme === "dark");
+    setIsDark(getEffectiveTheme() === "dark");
 
     const handleThemeChange = (e: Event) => {
       const customEvent = e as CustomEvent<boolean>;
       if (typeof customEvent.detail === "boolean") {
         setIsDark(customEvent.detail);
       } else {
-        setIsDark(localStorage.getItem("slang_theme") === "dark");
+        setIsDark(getEffectiveTheme() === "dark");
       }
     };
 
-    window.addEventListener("slang_theme_changed", handleThemeChange);
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange);
     return () => {
-      window.removeEventListener("slang_theme_changed", handleThemeChange);
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange);
     };
   }, []);
 
   const toggleAppearance = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("slang_theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("slang_theme", "light");
-    }
-    window.dispatchEvent(new CustomEvent("slang_theme_changed", { detail: next }));
+    const nextTheme = executeToggleTheme();
+    setIsDark(nextTheme === "dark");
   };
 
   const handleSignOut = async () => {
