@@ -6,10 +6,12 @@ runs do not need network access.
 Wire up with: app.include_router(router)
 """
 import asyncio
+import os
 import re
 import subprocess
 import tempfile
 import shutil
+import time
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -19,6 +21,8 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 router = APIRouter()
+
+LATEX_TIMEOUT = int(os.environ.get("LATEX_COMPILATION_TIMEOUT", "35"))
 
 # File access / shell commands are never needed in a resume.
 # \input{glyphtounicode} is allowed because many resume templates use it.
@@ -216,10 +220,15 @@ async def export_pdf(req: ExportRequest):
     )
     clean_tex = sanitize_latex_characters(clean_tex)
 
+    start_time = time.perf_counter()
     data = b""
     pages = 1
     previews = []
     is_fallback = False
+    fallback_reason = "none"
+
+    if not tectonic_bin:
+        fallback_reason = "missing_tectonic"
 
     if tectonic_bin:
         with tempfile.TemporaryDirectory() as tmp:
@@ -238,13 +247,20 @@ async def export_pdf(req: ExportRequest):
                         cwd=tmp,
                         capture_output=True,
                         text=True,
-                        timeout=15,
+                        timeout=LATEX_TIMEOUT,
                     )
-                except (subprocess.TimeoutExpired, Exception):
+                except subprocess.TimeoutExpired:
                     run = None
+                    fallback_reason = "compilation_timeout"
+                    break
+                except Exception:
+                    run = None
+                    fallback_reason = "compilation_error"
                     break
 
                 if not run or run.returncode != 0 or not pdf_path.exists():
+                    if fallback_reason == "none":
+                        fallback_reason = "compilation_error"
                     break
 
                 data = pdf_path.read_bytes()
@@ -271,8 +287,11 @@ async def export_pdf(req: ExportRequest):
     # If tectonic failed, timed out, or produced empty output, fall back to high-res vector PDF generator
     if not data or len(data) < 100:
         is_fallback = True
+        if fallback_reason == "none":
+            fallback_reason = "empty_output"
         data, pages, previews = _generate_vector_pdf_fallback(clean_tex, req.filename)
 
+    elapsed = time.perf_counter() - start_time
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", req.filename) or "resume"
     return Response(
         content=data,
@@ -281,7 +300,9 @@ async def export_pdf(req: ExportRequest):
             "Content-Disposition": f'attachment; filename="{safe}.pdf"',
             "X-Page-Count": str(pages),
             "X-Fallback-Compiled": "true" if is_fallback else "false",
-            "Access-Control-Expose-Headers": "X-Page-Count, X-Fallback-Compiled",
+            "X-Fallback-Reason": fallback_reason,
+            "X-Compilation-Time": f"{elapsed:.2f}s",
+            "Access-Control-Expose-Headers": "X-Page-Count, X-Fallback-Compiled, X-Fallback-Reason, X-Compilation-Time",
         },
     )
 

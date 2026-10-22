@@ -151,6 +151,7 @@ export function Step3Export({
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState<number>(1);
+  const [isFallbackPdf, setIsFallbackPdf] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [autoFitting, setAutoFitting] = useState(false);
   const [isAutoFitted, setIsAutoFitted] = useState(false);
@@ -197,7 +198,7 @@ export function Step3Export({
 
   const tailoredTex = buildTailoredTex(rawLatex, reviewedChanges, candidateName, candidateEmail);
 
-  // Fetch real compiled PDF from backend on mount (enforce: false for preview)
+  // Fetch compiled PDF or instant vector preview on mount
   useEffect(() => {
     let active = true;
     let createdUrl: string | null = null;
@@ -206,16 +207,21 @@ export function Step3Export({
       setPdfLoading(true);
       setCompileError(null);
       try {
-        const { url, pageCount: pages } = await fetchResumePdfBlobUrl(tailoredTex);
+        const { url, pageCount: pages, isFallback } = await fetchResumePdfBlobUrl(
+          tailoredTex,
+          false,
+          { candidateName, candidateEmail }
+        );
         if (active) {
           createdUrl = url;
           setPdfBlobUrl(url);
           setPageCount(pages);
+          setIsFallbackPdf(!!isFallback);
         }
       } catch (err: any) {
         if (active) {
           console.error("PDF Preview generation error:", err);
-          setCompileError(err.message || "Failed to compile LaTeX preview.");
+          setCompileError(err.message || "Failed to compile preview.");
         }
       } finally {
         if (active) setPdfLoading(false);
@@ -228,7 +234,7 @@ export function Step3Export({
       active = false;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [tailoredTex]);
+  }, [tailoredTex, candidateName, candidateEmail]);
 
   const handleDownloadTex = () => {
     const safeName = getEffectiveFilename();
@@ -261,7 +267,7 @@ export function Step3Export({
     } catch (err: any) {
       console.error("Download PDF error:", err);
       setCompileError(err.message || "PDF compilation failed.");
-      alert(`Export Error: ${err.message || "Could not compile PDF with Tectonic."}`);
+      alert(`Export Error: ${err.message || "Could not generate PDF."}`);
     } finally {
       setDownloadingPdf(false);
     }
@@ -271,9 +277,14 @@ export function Step3Export({
     setAutoFitting(true);
     setCompileError(null);
     try {
-      const { url, pageCount: pages } = await fetchResumePdfBlobUrl(tailoredTex, true);
+      const { url, pageCount: pages, isFallback } = await fetchResumePdfBlobUrl(
+        tailoredTex,
+        true,
+        { candidateName, candidateEmail }
+      );
       setPdfBlobUrl(url);
       setPageCount(pages);
+      setIsFallbackPdf(!!isFallback);
       setIsAutoFitted(true);
     } catch (err: any) {
       console.error("Auto-fit error:", err);
@@ -364,13 +375,24 @@ export function Step3Export({
               <h3 className="font-semibold text-[17px] text-ink">{candidateName}</h3>
               <p className="text-[12px] text-ink-muted">{candidateEmail} • Tailored LaTeX PDF</p>
             </div>
-            <span className={`font-mono text-[11px] px-2.5 py-1 rounded-pill font-medium ${
-              pageCount > 1
-                ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50"
-                : "text-status-supported-text bg-status-supported-bg"
-            }`}>
-              {pageCount === 1 ? "1 Page • 100% Fit" : `${pageCount} Pages • Trim to 1 Page`}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`font-mono text-[11px] px-2.5 py-1 rounded-pill font-medium ${
+                pageCount > 1
+                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50"
+                  : "text-status-supported-text bg-status-supported-bg"
+              }`}>
+                {pageCount === 1 ? "1 Page • 100% Fit" : `${pageCount} Pages • Trim to 1 Page`}
+              </span>
+              {isFallbackPdf ? (
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded-pill bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300/40">
+                  Vector ATS
+                </span>
+              ) : (
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded-pill bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                  Tectonic
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Real PDF Embed in Iframe */}
@@ -378,7 +400,7 @@ export function Step3Export({
             {pdfLoading && (
               <div className="flex flex-col items-center gap-2 text-[13px] text-ink-muted">
                 <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                <span>Compiling real LaTeX PDF preview with Tectonic...</span>
+                <span>Compiling real LaTeX PDF preview...</span>
               </div>
             )}
 
@@ -401,12 +423,13 @@ export function Step3Export({
                     onClick={() => {
                       setPdfLoading(true);
                       setCompileError(null);
-                      fetchResumePdfBlobUrl(tailoredTex)
-                        .then(({ url, pageCount: pages }) => {
+                      fetchResumePdfBlobUrl(tailoredTex, false, { candidateName, candidateEmail })
+                        .then(({ url, pageCount: pages, isFallback }) => {
                           setPdfBlobUrl(url);
                           setPageCount(pages);
+                          setIsFallbackPdf(!!isFallback);
                         })
-                        .catch((err) => setCompileError(err.message || "Failed to compile LaTeX preview."))
+                        .catch((err) => setCompileError(err.message || "Failed to compile preview."))
                         .finally(() => setPdfLoading(false));
                     }}
                     className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-accent text-accent-contrast text-[12px] font-medium cursor-pointer shadow-subtle hover:brightness-110 active:scale-95 transition-all"
@@ -438,10 +461,20 @@ export function Step3Export({
             {/* 4 Green Checkmarks */}
             <div className="space-y-3">
               <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
+                {pdfLoading ? (
+                  <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0 mt-0.5" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
+                )}
                 <div>
-                  <p className="text-[13px] font-medium text-ink">PDF compiled cleanly</p>
-                  <p className="text-[11px] text-ink-muted">Tectonic sandbox executed with 0 errors or warnings.</p>
+                  <p className="text-[13px] font-medium text-ink">
+                    {isFallbackPdf ? "PDF rendered cleanly (Vector ATS Engine)" : "PDF compiled cleanly (Tectonic Sandbox)"}
+                  </p>
+                  <p className="text-[11px] text-ink-muted">
+                    {isFallbackPdf
+                      ? "High-fidelity vector PDF verified with OCR-free text streams."
+                      : "Tectonic sandbox executed with 0 errors or warnings."}
+                  </p>
                 </div>
               </div>
 
