@@ -250,6 +250,11 @@ export function Step3Export({
   };
 
   const handleDownloadPdf = async () => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      setCompileError("You appear to be offline. Please verify your network connection and try again.");
+      return;
+    }
+
     const safeName = getEffectiveFilename();
     setDownloadingPdf(true);
     setCompileError(null);
@@ -266,8 +271,8 @@ export function Step3Export({
       }
     } catch (err: any) {
       console.error("Download PDF error:", err);
-      setCompileError(err.message || "PDF compilation failed.");
-      alert(`Export Error: ${err.message || "Could not generate PDF."}`);
+      const msg = err.message || "PDF generation timed out. You can download the .tex source or retry compilation.";
+      setCompileError(msg);
     } finally {
       setDownloadingPdf(false);
     }
@@ -370,12 +375,12 @@ export function Step3Export({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: REAL PDF IFRAME PREVIEW (7 cols) */}
         <div className="lg:col-span-7 bg-canvas border border-hairline rounded-card shadow-paper p-4 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-hairline pb-3">
-            <div>
-              <h3 className="font-semibold text-[17px] text-ink">{candidateName}</h3>
-              <p className="text-[12px] text-ink-muted">{candidateEmail} • Tailored LaTeX PDF</p>
+          <div className="flex items-center justify-between border-b border-hairline pb-3 gap-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-[17px] text-ink truncate">{candidateName || "Tailored Candidate"}</h3>
+              <p className="text-[12px] text-ink-muted truncate">{candidateEmail || "Verified Resume"} • Tailored LaTeX PDF</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <span className={`font-mono text-[11px] px-2.5 py-1 rounded-pill font-medium ${
                 pageCount > 1
                   ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50"
@@ -396,9 +401,9 @@ export function Step3Export({
           </div>
 
           {/* Real PDF Embed in Iframe */}
-          <div className="w-full min-h-[420px] sm:min-h-[680px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center">
+          <div className="w-full min-h-[380px] sm:min-h-[640px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center [touch-action:pan-y]">
             {pdfLoading && (
-              <div className="flex flex-col items-center gap-2 text-[13px] text-ink-muted">
+              <div className="flex flex-col items-center gap-2 text-[13px] text-ink-muted p-6 text-center">
                 <Loader2 className="w-6 h-6 animate-spin text-accent" />
                 <span>Compiling real LaTeX PDF preview...</span>
               </div>
@@ -407,7 +412,7 @@ export function Step3Export({
             {!pdfLoading && pdfBlobUrl && (
               <iframe
                 src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                className="w-full h-[55dvh] sm:h-[700px] rounded-xl border-0"
+                className="w-full h-[50dvh] sm:h-[680px] rounded-xl border-0 overflow-hidden"
                 title="Real Compiled LaTeX Resume PDF Preview"
               />
             )}

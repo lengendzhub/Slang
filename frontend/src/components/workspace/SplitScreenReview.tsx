@@ -914,13 +914,24 @@ function RedesignedDiffCard({
 
   return (
     <div
+      role="article"
+      tabIndex={0}
+      aria-label={`Diff slot for ${change.section}: ${change.roleTitle || "Experience"}`}
       onClick={onSelect}
-      className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          if ((e.target as HTMLElement).tagName !== "BUTTON" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
+            e.preventDefault();
+            onSelect();
+          }
+        }
+      }}
+      className={`rounded-2xl border transition-all duration-200 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 ${
         isResolved
-          ? "bg-[#14151C]/70 border-white/[0.06]"
+          ? "bg-[#18181b]/60 border-white/[0.08]"
           : isActive
-          ? "bg-[#161922] border-blue-500/50 shadow-[0_4px_24px_rgba(37,99,235,0.15)]"
-          : "bg-[#14161F] border-white/[0.07] hover:border-white/[0.14] cursor-pointer"
+          ? "bg-[#1c1c1e] border-blue-500/60 shadow-[0_4px_24px_rgba(0,113,227,0.18)]"
+          : "bg-[#141416] border-white/[0.07] hover:border-white/[0.14] cursor-pointer"
       }`}
     >
       {/* 1. CARD HEADER BAR: Metadata Badges + Top-Right Action Controls (Zero text overlap) */}
@@ -928,12 +939,12 @@ function RedesignedDiffCard({
         {/* Left: Metadata Badges */}
         <div className="flex items-center gap-2">
           {change.matchType === "direct" ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <ShieldCheck className="w-3 h-3" />
               <span>Supported • Direct Match</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <AlertCircle className="w-3 h-3" />
               <span>Transferable • Verified</span>
             </span>
@@ -941,13 +952,13 @@ function RedesignedDiffCard({
 
           <span
             title={change.evidenceSourceQuote}
-            className="font-mono text-[11px] text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.08]"
+            className="font-mono text-[11px] text-zinc-400 bg-white/[0.04] px-2.5 py-0.5 rounded-full border border-white/[0.08]"
           >
             Fact ID: {change.evidenceId}
           </span>
 
           {diag && (
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
+            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
               +{diag.pointContribution} ATS pts
             </span>
@@ -959,12 +970,12 @@ function RedesignedDiffCard({
           {isResolved ? (
             <div className="flex items-center gap-2">
               <span
-                className={`text-xs font-medium px-2 py-0.5 rounded ${
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${
                   change.decision === "accepted"
-                    ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
                     : change.decision === "rejected"
-                    ? "text-zinc-400 bg-zinc-800"
-                    : "text-blue-400 bg-blue-500/10 border border-blue-500/20"
+                    ? "text-zinc-400 bg-zinc-800/80 border-white/[0.08]"
+                    : "text-blue-400 bg-blue-500/10 border-blue-500/20"
                 }`}
               >
                 {change.decision === "accepted" && "✓ Accepted"}
@@ -975,7 +986,8 @@ function RedesignedDiffCard({
               <button
                 type="button"
                 onClick={onReset}
-                className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2 text-xs text-zinc-400 hover:text-zinc-200 inline-flex items-center justify-center gap-1 transition-colors active:scale-95 cursor-pointer"
+                aria-label="Undo bullet decision and restore pending state"
+                className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] inline-flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
                 title="Undo decision"
               >
                 <Undo2 className="w-3.5 h-3.5" />
@@ -989,7 +1001,8 @@ function RedesignedDiffCard({
                 <button
                   type="button"
                   onClick={onAccept}
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-md text-xs font-medium bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 inline-flex items-center justify-center gap-1 transition-colors shadow-sm active:scale-95 cursor-pointer"
+                  aria-label="Accept proposed revision"
+                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-full text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 inline-flex items-center justify-center gap-1 transition-all shadow-sm active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Accept</span>
@@ -999,7 +1012,8 @@ function RedesignedDiffCard({
                 <button
                   type="button"
                   onClick={onReject}
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-md text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 inline-flex items-center justify-center gap-1 transition-colors active:scale-95 cursor-pointer"
+                  aria-label="Reject proposed revision and retain original bullet"
+                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 inline-flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   <X className="w-3.5 h-3.5" />
                   <span>Reject</span>
@@ -1009,7 +1023,8 @@ function RedesignedDiffCard({
                 <button
                   type="button"
                   onClick={onStartEdit}
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/5 inline-flex items-center justify-center gap-1 transition-colors active:scale-95 cursor-pointer"
+                  aria-label="Edit proposed revision directly"
+                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/10 inline-flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
                   title="Edit phrasing directly"
                 >
                   <Pencil className="w-3 h-3" />
@@ -1050,13 +1065,15 @@ function RedesignedDiffCard({
                 <textarea
                   rows={3}
                   value={draftText}
+                  autoFocus
+                  aria-label="Edit proposed line text"
                   onChange={(e) => onChangeDraft(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/60 p-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500 leading-relaxed font-sans"
+                  className="w-full rounded-xl border border-white/15 bg-black/70 p-3 text-[14px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed font-sans placeholder-zinc-500 transition-all"
                 />
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-xs pt-1">
                   <span
-                    className={`font-mono ${
-                      overBudget ? "text-red-400 font-semibold" : "text-zinc-400"
+                    className={`font-mono text-[11px] px-2 py-0.5 rounded ${
+                      overBudget ? "bg-red-500/10 text-red-400 font-semibold border border-red-500/20" : "text-zinc-400"
                     }`}
                   >
                     {draftText.length} / {change.charBudget} chars{" "}
@@ -1066,14 +1083,16 @@ function RedesignedDiffCard({
                     <button
                       type="button"
                       onClick={onCancelEdit}
-                      className="px-2.5 py-1 rounded text-zinc-400 hover:text-white"
+                      aria-label="Cancel editing"
+                      className="px-3 py-1.5 rounded-full text-xs text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={onSaveEdit}
-                      className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium shadow-sm"
+                      aria-label="Save line revision"
+                      className="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
                     >
                       Save Line
                     </button>
