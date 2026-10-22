@@ -1,27 +1,18 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
+import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
   Check,
   X,
-  Pencil,
-  RotateCcw,
   Lock,
   FileText,
-  FileCode2,
   ChevronDown,
   ChevronRight,
   ArrowRight,
-  CheckCircle2,
-  Sparkles,
   AlertCircle,
-  HelpCircle,
-  Undo2,
-  Sliders,
-  ExternalLink,
-  TrendingUp,
+  Layers,
 } from "lucide-react";
 import {
   evaluateResumeATS,
@@ -29,6 +20,7 @@ import {
   ResumeDiffItem,
   ATSConfig,
 } from "@/lib/atsEngine";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 // --- Types matching Backend Schema ---
 export type MatchType = "direct" | "transferable";
@@ -70,48 +62,37 @@ export interface SplitScreenReviewProps {
   rawLatex?: string;
   onContinueToDownload?: (reviewedChanges: BulletChange[]) => void;
   onBackToStep1?: () => void;
-  standalone?: boolean; // When rendered standalone with top header
+  standalone?: boolean;
 }
-
-// Clean empty fallbacks - only real data from backend/session is rendered
-const DEFAULT_CHANGES: BulletChange[] = [];
-const DEFAULT_26_REQUIREMENTS: JDRequirement[] = [];
 
 export default function SplitScreenReview({
   initialChanges,
   initialRequirements,
   candidateName = "",
   candidateEmail = "",
-  candidateLocation = "",
   targetRole = "Target Role",
   rawLatex,
   onContinueToDownload,
   onBackToStep1,
-  standalone = false,
 }: SplitScreenReviewProps) {
-  const [changes, setChanges] = useState<BulletChange[]>(
-    initialChanges && initialChanges.length > 0 ? initialChanges : DEFAULT_CHANGES
-  );
-  const [activeChangeId, setActiveChangeId] = useState<string>(changes[0]?.id || "");
+  const [changes, setChanges] = useState<BulletChange[]>(initialChanges || []);
+  const [prevInitialChanges, setPrevInitialChanges] = useState(initialChanges);
+  if (initialChanges !== prevInitialChanges) {
+    setPrevInitialChanges(initialChanges);
+    setChanges(initialChanges || []);
+  }
+
   const [viewMode, setViewMode] = useState<"paper" | "latex">("paper");
-  const [mobileTab, setMobileTab] = useState<"changes" | "report" | "source">("changes");
-  const [preambleLocked, setPreambleLocked] = useState<boolean>(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState<string>("");
-  const [accordionOpen, setAccordionOpen] = useState<boolean>(true);
-  const [rubricTab, setRubricTab] = useState<"all" | "direct" | "transferable" | "missing">("all");
+  const [mobileRubricOpen, setMobileRubricOpen] = useState(false);
 
-  useEffect(() => {
-    if (initialChanges && initialChanges.length > 0) {
-      setChanges(initialChanges);
-      setActiveChangeId(initialChanges[0]?.id || "");
-    }
-  }, [initialChanges]);
+  // Collapsible Rubric Groups
+  const [directOpen, setDirectOpen] = useState(true);
+  const [transferableOpen, setTransferableOpen] = useState(true);
+  const [missingOpen, setMissingOpen] = useState(true);
 
-  const requirements =
-    initialRequirements && initialRequirements.length > 0
-      ? initialRequirements
-      : DEFAULT_26_REQUIREMENTS;
+  const requirements = useMemo(() => initialRequirements || [], [initialRequirements]);
 
   // Computed state
   const pendingCount = useMemo(
@@ -120,7 +101,7 @@ export default function SplitScreenReview({
   );
   const allReviewed = pendingCount === 0;
 
-  // Real-time ATS Multi-Factor Score Calculation
+  // Real-time ATS Score Calculation
   const atsReport = useMemo(() => {
     const atsDiffs: ResumeDiffItem[] = changes.map((c) => ({
       id: c.id,
@@ -148,19 +129,14 @@ export default function SplitScreenReview({
 
     const atsConfig: ATSConfig = {
       targetRole,
-      isLatexLockedOnePage: preambleLocked,
+      isLatexLockedOnePage: true,
       hasValidContactBlock: true,
       standardSectionsPresent: ["EXPERIENCE", "EDUCATION", "SKILLS"],
       rawLatexSource: rawLatex,
     };
 
     return evaluateResumeATS(atsDiffs, atsReqs, atsConfig);
-  }, [changes, requirements, targetRole, preambleLocked, rawLatex]);
-
-  const displayedRequirements = useMemo(() => {
-    if (rubricTab === "all") return atsReport.rubricStats.matchedList;
-    return atsReport.rubricStats.matchedList.filter((r) => r.status === rubricTab);
-  }, [atsReport.rubricStats.matchedList, rubricTab]);
+  }, [changes, requirements, targetRole, rawLatex]);
 
   // Actions
   const handleDecision = (id: string, decision: "accepted" | "rejected") => {
@@ -180,7 +156,7 @@ export default function SplitScreenReview({
     setEditingId(null);
   };
 
-  const handleReset = (id: string) => {
+  const handleUndo = (id: string) => {
     setChanges((prev) =>
       prev.map((item) =>
         item.id === id
@@ -213,310 +189,125 @@ export default function SplitScreenReview({
     return c.proposedText;
   };
 
-  return (
-    <div className="w-full min-h-screen bg-[#090A0F] text-[#F4F4F5] flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* 1. COMPACT TOP NAVIGATION & CONTEXT BAR (Single 56px Bar) */}
-      <header className="sticky top-0 z-40 h-14 bg-[#090A0F]/90 backdrop-blur-md border-b border-white/[0.08] px-4 sm:px-6 flex items-center justify-between">
-        {/* Left: Brand + Monospace Engine Pill + Divider + Strict Fact Anchoring */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-semibold text-[15px] tracking-tight text-white group-hover:text-blue-400 transition-colors">
-              Slang
-            </span>
-          </Link>
-          <span className="text-zinc-600 select-none">/</span>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Strict Fact Anchoring</span>
-          </div>
-        </div>
+  const directReqs = requirements.filter((r) => r.status === "direct");
+  const transferableReqs = requirements.filter((r) => r.status === "transferable");
+  const missingReqs = requirements.filter((r) => r.status === "missing");
 
-        {/* Center: Sleek Horizontal Stepper */}
-        <nav
-          aria-label="Tailor process steps"
-          className="hidden md:flex items-center gap-2 text-[12px]"
-        >
-          {/* Step 1: Completed */}
-          {onBackToStep1 ? (
+  return (
+    <div className="w-full min-h-screen bg-surface text-ink flex flex-col font-sans selection:bg-accent selection:text-white">
+      {/* 1. Slim Apple Top Context Header */}
+      <header className="sticky top-0 z-40 h-12 frosted-glass px-4 sm:px-6 flex items-center justify-between border-b border-hairline">
+        <div className="flex items-center gap-3">
+          {onBackToStep1 && (
             <button
               type="button"
               onClick={onBackToStep1}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200 transition-colors"
+              className="text-[13px] text-ink-secondary hover:text-ink transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
-                ✓
-              </span>
-              <span>Resume & Job</span>
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              <span>Step 1</span>
             </button>
-          ) : (
-            <Link
-              href="/workspace"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
-              <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
-                ✓
-              </span>
-              <span>Resume & Job</span>
-            </Link>
           )}
+          <span className="text-separator hidden sm:inline">|</span>
+          <span className="font-semibold text-[14px] text-ink truncate max-w-[220px]">
+            {targetRole}
+          </span>
+        </div>
 
-          <ChevronRight className="w-3 h-3 text-zinc-600" />
-
-          {/* Step 2: Active */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/15 border border-blue-500/30 text-blue-300 font-semibold shadow-[0_0_12px_rgba(37,99,235,0.25)]">
-            <span className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">
-              2
-            </span>
-            <span>Review Changes</span>
-          </div>
-
-          <ChevronRight className="w-3 h-3 text-zinc-600" />
-
-          {/* Step 3: Pending */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-zinc-500">
-            <span className="w-4 h-4 rounded-full bg-zinc-800 text-zinc-500 flex items-center justify-center text-[10px]">
-              3
-            </span>
-            <span>Download</span>
-          </div>
-        </nav>
-
-        {/* Right: Target Role Pill & Quick Links */}
+        {/* View Mode Toggle: Paper View vs .tex Source */}
         <div className="flex items-center gap-3">
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[12px] text-zinc-400">
-            <span>Target:</span>
-            <strong className="text-zinc-200 font-medium truncate max-w-[200px]">
-              {targetRole}
-            </strong>
-          </div>
+          <SegmentedControl
+            options={[
+              { id: "paper", label: "Paper View" },
+              { id: "latex", label: ".tex Source" },
+            ]}
+            value={viewMode}
+            onChange={(val) => setViewMode(val as "paper" | "latex")}
+            name="workspace-view-mode"
+          />
 
-          <Link
-            href="/library"
-            className="text-[12px] text-zinc-400 hover:text-zinc-200 transition-colors hidden sm:block"
+          {/* Mobile Rubric Sheet Trigger */}
+          <button
+            type="button"
+            onClick={() => setMobileRubricOpen(true)}
+            className="lg:hidden pill-btn pill-btn-secondary px-3 py-1 text-[12px] min-h-[32px] gap-1.5"
           >
-            My Library
-          </Link>
+            <Layers className="w-3.5 h-3.5" />
+            <span>Rubric ({atsReport.totalScore}%)</span>
+          </button>
         </div>
       </header>
 
-      {/* 2. WORKSPACE SUB-HEADER (TOOLBAR) */}
-      <div className="sticky top-14 z-30 bg-[#090A0F]/80 backdrop-blur-md border-b border-white/[0.06] px-4 sm:px-6 py-2.5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          {/* Left Title & Muted Subtitle */}
-          <div className="flex items-baseline gap-2.5">
-            <h1 className="text-base sm:text-lg font-semibold tracking-tight text-[#F4F4F5]">
-              Review Proposed Changes
-            </h1>
-            <span className="hidden sm:inline text-xs text-[#71717A]">
-              • Review and confirm each line before export.
-            </span>
-          </div>
-
-          {/* Right Toolbar Controls */}
-          <div className="flex items-center gap-2.5 self-end sm:self-auto">
-            {/* Status Indicator */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.07] text-[11px] font-mono text-zinc-400">
-              <Lock className="w-3 h-3 text-emerald-400" />
-              <span>LaTeX Layout Locked • 1 Page</span>
-            </div>
-
-            {/* Sleek Segmented Control: Paper View vs .tex Source */}
-            <div
-              role="tablist"
-              aria-label="Document view mode"
-              className="inline-flex p-0.5 rounded-lg bg-zinc-900 border border-white/[0.08]"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={viewMode === "paper"}
-                onClick={() => setViewMode("paper")}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] font-medium transition-all ${
-                  viewMode === "paper"
-                    ? "bg-zinc-800 text-white shadow-sm"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Paper View</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={viewMode === "latex"}
-                onClick={() => setViewMode("latex")}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] font-mono font-medium transition-all ${
-                  viewMode === "latex"
-                    ? "bg-zinc-800 text-white shadow-sm"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                <FileCode2 className="w-3.5 h-3.5" />
-                <span>.tex Source</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. MAIN SPLIT-PANE WORKSPACE (12-Column Grid, max-w-7xl mx-auto) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 pb-32">
-        {/* Mobile View Switcher (Below lg): Switches between Review Changes, Match Rubric & .tex Source */}
-        <div className="lg:hidden flex items-center justify-center p-1 rounded-pill bg-zinc-900 border border-white/[0.08] mb-5">
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("changes");
-              setViewMode("paper");
-            }}
-            className={`flex-1 min-h-[44px] rounded-pill text-[12px] font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mobileTab === "changes" && viewMode === "paper"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <span>Changes</span>
-            {pendingCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-amber-400 text-black text-[10px] font-bold inline-flex items-center justify-center">
-                {pendingCount}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("report")}
-            className={`flex-1 min-h-[44px] rounded-pill text-[12px] font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mobileTab === "report"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <span>Match Rubric</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              {atsReport.totalScore}%
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMobileTab("source");
-              setViewMode("latex");
-            }}
-            className={`flex-1 min-h-[44px] rounded-pill text-[12px] font-mono transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mobileTab === "source" || viewMode === "latex"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <span>.tex Source</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT PANE (8 Columns) — Interactive Resume Canvas */}
-          <section className={`lg:col-span-8 space-y-4 ${mobileTab === "report" ? "hidden lg:block" : "block"}`}>
+      {/* 2. Main 65 / 35 Split Layout */}
+      <div className="flex-1 max-w-[1280px] w-full mx-auto px-4 sm:px-6 py-6 pb-28">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* LEFT: 65% Paper Canvas (8 Cols out of 12) */}
+          <main className="lg:col-span-8 space-y-4">
             {viewMode === "paper" ? (
-              /* Elevated Surface / Resume Canvas: #111114 with 1px border */
-              <div className="bg-[#111114] border border-white/[0.07] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.5)] p-4 sm:p-8 space-y-6">
-                {/* Candidate Header Block (NO redundant Accept All button here!) */}
-                <div className="border-b border-white/[0.07] pb-5 flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
-                  <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-[#F4F4F5]">
-                      {candidateName}
-                    </h2>
-                    <p className="text-sm text-[#A1A1AA] mt-0.5">
-                      {candidateEmail} • {candidateLocation}
+              /* The Paper Canvas */
+              <div className="bg-canvas border border-hairline rounded-card shadow-paper p-6 sm:p-10 space-y-8">
+                {/* Locked PII-Redacted Contact Block */}
+                <div className="border-b border-hairline pb-5 text-center space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-pill bg-surface border border-hairline text-[11px] font-mono text-ink-secondary mb-1">
+                    <Lock className="w-3 h-3 text-status-supported-text" />
+                    <span>Contact Block Locked • PII Redacted</span>
+                  </div>
+                  <h2 className="text-[22px] font-semibold tracking-tight text-ink">
+                    {candidateName || "Candidate Master"}
+                  </h2>
+                  <p className="text-[12px] font-mono text-ink-secondary">
+                    {candidateEmail ? `[Redacted Email: ${candidateEmail.replace(/(.{2})(.*)(@.*)/, "$1***$3")}]` : "[Email Protected]"} • [Phone Redacted] • [Location Protected]
+                  </p>
+                </div>
+
+                {/* Section Header */}
+                <div className="flex items-center justify-between border-b border-hairline pb-2">
+                  <h3 className="text-[13px] font-semibold uppercase tracking-wider text-ink font-mono">
+                    Experience & Contributions
+                  </h3>
+                  <span className="text-[11px] font-mono text-ink-secondary">
+                    Single-Page Budget Locked
+                  </span>
+                </div>
+
+                {/* Empty State */}
+                {changes.length === 0 ? (
+                  <div className="text-center py-16 space-y-3">
+                    <div className="w-10 h-10 rounded-full bg-surface border border-hairline flex items-center justify-center text-ink-secondary mx-auto">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <h4 className="text-[16px] font-semibold text-ink">
+                      No Diff Proposals Available
+                    </h4>
+                    <p className="apple-body text-ink-secondary text-[13px] max-w-[340px] mx-auto">
+                      Upload your LaTeX resume in Step 1 to generate verifiable sentence modifications.
                     </p>
                   </div>
-
-                  {/* Clean Non-Intrusive Privacy Badge */}
-                  <div className="self-start sm:self-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.07] font-mono text-[11px] text-zinc-400">
-                    <Lock className="w-3 h-3 text-zinc-500" />
-                    <span>Contact block untouched (PII redacted)</span>
+                ) : (
+                  /* Inline Diff Cards */
+                  <div className="space-y-4">
+                    {changes.map((change) => (
+                      <InlineDiffCard
+                        key={change.id}
+                        change={change}
+                        isEditing={editingId === change.id}
+                        draftText={draftText}
+                        onAccept={() => handleDecision(change.id, "accepted")}
+                        onReject={() => handleDecision(change.id, "rejected")}
+                        onUndo={() => handleUndo(change.id)}
+                        onStartEdit={() => startEditing(change)}
+                        onChangeDraft={setDraftText}
+                        onSaveEdit={() => saveEdit(change.id)}
+                        onCancelEdit={() => setEditingId(null)}
+                      />
+                    ))}
                   </div>
-                </div>
-
-                {/* Section Header: EXPERIENCE */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold tracking-widest uppercase text-[#71717A]">
-                      EXPERIENCE
-                    </h3>
-                    <span className="text-[11px] font-mono text-zinc-500">
-                      {changes.length} content slots modified
-                    </span>
-                  </div>
-
-                  {changes.length === 0 ? (
-                    <div className="text-center py-12 px-4 space-y-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
-                      <div className="w-12 h-12 rounded-full bg-white/[0.05] border border-white/[0.1] text-zinc-400 mx-auto flex items-center justify-center">
-                        <FileText className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="text-base font-semibold text-white">
-                          No Sentence Modifications Proposed Yet
-                        </h4>
-                        <p className="text-xs text-zinc-400 max-w-[380px] mx-auto mt-1 leading-relaxed">
-                          Upload your master resume in Step 1 and provide a target job description to generate verifiable sentence modifications.
-                        </p>
-                      </div>
-                      {onBackToStep1 && (
-                        <div className="pt-2">
-                          <button
-                            type="button"
-                            onClick={onBackToStep1}
-                            className="px-5 py-2.5 rounded-full bg-accent text-white text-xs font-semibold hover:bg-accent-hover transition-all cursor-pointer shadow-subtle hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            Return to Step 1
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      {/* Role & Company Subheading */}
-                      <div className="flex items-baseline justify-between text-xs border-b border-white/[0.04] pb-1.5 text-zinc-400">
-                        <div>
-                          <strong className="text-zinc-200 font-semibold text-[13px]">
-                            {changes[0]?.company || targetRole}
-                          </strong>{" "}
-                          {changes[0]?.roleTitle ? `— ${changes[0].roleTitle}` : ""}
-                        </div>
-                        <span className="font-mono text-zinc-500">{changes[0]?.dateRange || ""}</span>
-                      </div>
-
-                      {/* Redesigned Zero-Overlap Inline Diff Review Cards */}
-                      <div className="space-y-3.5 pt-1">
-                        {changes.map((change) => {
-                          const diag = atsReport.bulletDiagnostics.find((b) => b.diffId === change.id);
-                          return (
-                            <RedesignedDiffCard
-                              key={change.id}
-                              change={change}
-                              diag={diag}
-                              isActive={activeChangeId === change.id}
-                              isEditing={editingId === change.id}
-                              draftText={draftText}
-                              onSelect={() => setActiveChangeId(change.id)}
-                              onAccept={() => handleDecision(change.id, "accepted")}
-                              onReject={() => handleDecision(change.id, "rejected")}
-                              onReset={() => handleReset(change.id)}
-                              onStartEdit={() => startEditing(change)}
-                              onChangeDraft={setDraftText}
-                              onSaveEdit={() => saveEdit(change.id)}
-                              onCancelEdit={() => setEditingId(null)}
-                            />
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
+                )}
               </div>
             ) : (
               /* .tex Source View */
-              <div className="bg-[#111114] border border-white/[0.07] rounded-xl p-4 sm:p-6 font-mono text-xs leading-relaxed overflow-x-auto space-y-2 text-zinc-300">
-                <div className="text-zinc-600 select-none pb-2 border-b border-white/[0.05]">
+              <div className="bg-canvas border border-hairline rounded-card p-6 font-mono text-[12px] leading-relaxed overflow-x-auto space-y-2 text-ink shadow-paper">
+                <div className="text-ink-secondary select-none pb-2 border-b border-hairline text-[11px]">
                   % --- LOCKED PREAMBLE (Byte-for-byte identical to uploaded master.tex) ---<br />
                   \documentclass[11pt,a4paper]&#123;article&#125;<br />
                   \usepackage[empty]&#123;fullpage&#125;<br />
@@ -526,314 +317,131 @@ export default function SplitScreenReview({
 
                 {changes.map((c) => (
                   <div key={c.id} className="py-1">
-                    <span className="text-blue-400">\resumeItem</span>&#123;
+                    <span className="text-accent">\resumeItem</span>&#123;
                     <span
                       className={
                         c.decision === "rejected"
-                          ? "text-zinc-500 line-through"
-                          : "text-emerald-300 bg-emerald-500/10 px-1 py-0.5 rounded"
+                          ? "diff-removed px-1 py-0.5 rounded"
+                          : "diff-added px-1 py-0.5 rounded"
                       }
                     >
                       {getFinalBulletText(c)}
                     </span>
                     &#125;{" "}
-                    <span className="text-zinc-600">
+                    <span className="text-ink-secondary">
                       % [anchor: {c.evidenceId} | {c.decision}]
                     </span>
                   </div>
                 ))}
 
-                <div className="text-zinc-600 select-none pt-2 border-t border-white/[0.05]">
+                <div className="text-ink-secondary select-none pt-2 border-t border-hairline text-[11px]">
                   \end&#123;document&#125;
                 </div>
               </div>
             )}
-          </section>
+          </main>
 
-          {/* RIGHT PANE (4 Columns) — Sticky ATS & Match Inspector */}
-          <aside className={`lg:col-span-4 lg:sticky lg:top-28 space-y-4 ${mobileTab === "report" ? "block" : "hidden lg:block"}`}>
-            {/* 1. Live ATS Compatibility Card */}
-            <div className="bg-[#111114] border border-white/[0.07] rounded-xl p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.5)] space-y-3.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-                    Live ATS Compatibility
-                  </span>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-3xl font-bold text-white tracking-tight">
-                      {atsReport.totalScore}
-                    </span>
-                    <span className="text-xs text-zinc-500">/ 100</span>
-                    {atsReport.scoreDelta > 0 && (
-                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                        +{atsReport.scoreDelta} pts vs Master
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right font-mono text-xs text-zinc-400">
-                  <div>Baseline: {atsReport.baselineScore}%</div>
-                  <div className="text-emerald-400">Max Potential: {atsReport.potentialMaxScore}%</div>
-                </div>
-              </div>
-
-              {/* Live Progress Bar */}
-              <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${atsReport.totalScore}%` }}
-                />
-              </div>
-
-              {/* 4-Pillar Breakdown */}
-              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
-                <div className="p-2.5 rounded-lg bg-zinc-900/70 border border-white/[0.05]">
-                  <div className="text-zinc-400 text-[11px]">Keywords (45%)</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">
-                    {atsReport.subScores.keywordScore}%
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-lg bg-zinc-900/70 border border-white/[0.05]">
-                  <div className="text-zinc-400 text-[11px]">Impact & Metrics (25%)</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">
-                    {atsReport.subScores.impactScore}%
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-lg bg-zinc-900/70 border border-white/[0.05]">
-                  <div className="text-zinc-400 text-[11px]">LaTeX Parse (15%)</div>
-                  <div className="text-sm font-semibold text-emerald-400 mt-0.5">
-                    {atsReport.subScores.structureScore}%
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-lg bg-zinc-900/70 border border-white/[0.05]">
-                  <div className="text-zinc-400 text-[11px]">Role Density (15%)</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">
-                    {atsReport.subScores.densityScore}%
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Job Rubric Requirements Card */}
-            <div className="bg-[#111114] border border-white/[0.07] rounded-xl p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05),0_10px_30px_rgba(0,0,0,0.5)] space-y-4">
-              {/* Summary Header */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Matched {atsReport.rubricStats.directMatches} of {atsReport.rubricStats.totalRequirements} requirements</span>
-                  </h3>
-                  <span className="font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded">
-                    Rubric v1.2
-                  </span>
-                </div>
-
-                <p className="text-xs text-zinc-400 mt-1">
-                  {atsReport.rubricStats.directMatches} direct matches • {atsReport.rubricStats.transferableMatches} re-framed • {atsReport.rubricStats.missingSkills} missing (100% truthful)
-                </p>
-
-                {/* Segmented / Filled Progress Bar */}
-                <div className="mt-3 relative w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                    style={{ width: `${(atsReport.rubricStats.directMatches / Math.max(1, atsReport.rubricStats.totalRequirements)) * 100}%` }}
-                  />
-                </div>
-
-                {/* Interactive Filter Pills */}
-                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/[0.05] text-[11px] flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => { setRubricTab("all"); setAccordionOpen(true); }}
-                    className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                      rubricTab === "all"
-                        ? "bg-zinc-700 text-white border border-zinc-600"
-                        : "bg-white/[0.04] text-zinc-400 hover:text-zinc-200 border border-white/[0.06]"
-                    }`}
-                  >
-                    All ({atsReport.rubricStats.totalRequirements})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setRubricTab("direct"); setAccordionOpen(true); }}
-                    className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                      rubricTab === "direct"
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
-                        : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15"
-                    }`}
-                  >
-                    {atsReport.rubricStats.directMatches} Direct
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setRubricTab("transferable"); setAccordionOpen(true); }}
-                    className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                      rubricTab === "transferable"
-                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                        : "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/15"
-                    }`}
-                  >
-                    {atsReport.rubricStats.transferableMatches} Reframed
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setRubricTab("missing"); setAccordionOpen(true); }}
-                    className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                      rubricTab === "missing"
-                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15"
-                    }`}
-                  >
-                    {atsReport.rubricStats.missingSkills} Missing
-                  </button>
-                </div>
-              </div>
-
-              {/* Collapsible Requirements Breakdown Accordion */}
-              <div className="border-t border-white/[0.06] pt-3">
-                <button
-                  type="button"
-                  onClick={() => setAccordionOpen(!accordionOpen)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-zinc-200 hover:text-white transition-colors py-1"
-                >
-                  <span className="flex items-center gap-1.5">
-                    {rubricTab === "missing" ? (
-                      <AlertCircle className="w-4 h-4 text-amber-400" />
-                    ) : rubricTab === "transferable" ? (
-                      <Sparkles className="w-4 h-4 text-cyan-400" />
-                    ) : (
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    )}
-                    <span>
-                      {rubricTab === "all"
-                        ? "All Requirements"
-                        : rubricTab === "direct"
-                        ? "Direct Matches"
-                        : rubricTab === "transferable"
-                        ? "Re-framed / Adjacent"
-                        : "Truthful Gaps (Missing)"}
-                    </span>
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${
-                      rubricTab === "missing"
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                        : rubricTab === "transferable"
-                        ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
-                        : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    }`}>
-                      {rubricTab === "all"
-                        ? atsReport.rubricStats.totalRequirements
-                        : rubricTab === "direct"
-                        ? atsReport.rubricStats.directMatches
-                        : rubricTab === "transferable"
-                        ? atsReport.rubricStats.transferableMatches
-                        : atsReport.rubricStats.missingSkills}
-                    </span>
-                  </span>
-                  {accordionOpen ? (
-                    <ChevronDown className="w-4 h-4 text-zinc-400" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-zinc-400" />
-                  )}
-                </button>
-
-                {accordionOpen && (
-                  <div className="mt-2.5 space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
-                    {displayedRequirements.length === 0 ? (
-                      <p className="text-xs text-zinc-500 italic py-2 px-1">
-                        No requirements in this category.
-                      </p>
-                    ) : (
-                      displayedRequirements.map((req) => (
-                        <div
-                          key={req.id}
-                          className="py-2 px-3 rounded-lg bg-zinc-900/40 hover:bg-zinc-900/80 border border-white/[0.04] flex flex-col gap-1.5 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-2">
-                              {req.status === "direct" && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                              )}
-                              {req.status === "transferable" && (
-                                <Sparkles className="w-3.5 h-3.5 text-cyan-400 mt-0.5 shrink-0" />
-                              )}
-                              {req.status === "missing" && (
-                                <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-                              )}
-                              <span className="text-xs text-zinc-300 leading-snug">
-                                {req.label}
-                              </span>
-                            </div>
-                            <span className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 border ${
-                              req.status === "direct"
-                                ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                                : req.status === "transferable"
-                                ? "text-cyan-400 bg-cyan-500/10 border-cyan-500/20"
-                                : "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                            }`}>
-                              {req.tier}
-                            </span>
-                          </div>
-                          {req.status === "transferable" && (
-                            <p className="text-[11px] text-cyan-400/80 pl-5 leading-tight">
-                              {req.note || "Transferable alignment — highlighted in tailored experience bullets."}
-                            </p>
-                          )}
-                          {req.status === "missing" && (
-                            <p className="text-[11px] text-zinc-500 pl-5 leading-tight">
-                              {req.note || "Unsupported by evidence bank. Left out of resume to guarantee 100% truthfulness."}
-                            </p>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* RIGHT: 35% Sticky Rubric Panel (4 Cols out of 12) */}
+          <aside className="hidden lg:block lg:col-span-4 lg:sticky lg:top-16 space-y-4">
+            <RubricPanelContent
+              atsReport={atsReport}
+              directReqs={directReqs}
+              transferableReqs={transferableReqs}
+              missingReqs={missingReqs}
+              directOpen={directOpen}
+              setDirectOpen={setDirectOpen}
+              transferableOpen={transferableOpen}
+              setTransferableOpen={setTransferableOpen}
+              missingOpen={missingOpen}
+              setMissingOpen={setMissingOpen}
+            />
           </aside>
         </div>
-      </main>
+      </div>
 
-      {/* 4. FLOATING / STICKY GLASSMORPHIC ACTION DOCK (BOTTOM) */}
-      <footer className="fixed bottom-0 inset-x-0 z-30 bg-[#090A0F]/90 backdrop-blur-md border-t border-white/[0.08] px-4 sm:px-6 py-3 pb-[calc(var(--sab,0px)+0.75rem)]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Left: Progress Indicator Dot + Changes Left Message */}
-          <div className="flex items-center gap-2.5 text-xs sm:text-sm">
+      {/* Mobile Rubric Bottom Sheet */}
+      <AnimatePresence>
+        {mobileRubricOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileRubricOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 350, damping: 32 }}
+              className="relative max-h-[85vh] overflow-y-auto bg-canvas rounded-t-[28px] border-t border-hairline p-6 shadow-apple z-10 space-y-4"
+            >
+              <div className="w-10 h-1 bg-separator rounded-full mx-auto mb-2" />
+              <div className="flex items-center justify-between pb-2 border-b border-hairline">
+                <h3 className="text-[17px] font-semibold text-ink">Fit Rubric</h3>
+                <button
+                  type="button"
+                  onClick={() => setMobileRubricOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-ink-secondary hover:text-ink"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <RubricPanelContent
+                atsReport={atsReport}
+                directReqs={directReqs}
+                transferableReqs={transferableReqs}
+                missingReqs={missingReqs}
+                directOpen={directOpen}
+                setDirectOpen={setDirectOpen}
+                transferableOpen={transferableOpen}
+                setTransferableOpen={setTransferableOpen}
+                missingOpen={missingOpen}
+                setMissingOpen={setMissingOpen}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 3. Floating Glass Action Dock (Bottom) */}
+      <footer className="fixed bottom-0 inset-x-0 z-30 frosted-glass px-4 sm:px-6 py-3 pb-[calc(var(--sab,0px)+0.75rem)] shadow-apple">
+        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Status Message */}
+          <div className="flex items-center gap-2.5 text-[13px]" aria-live="polite">
             {allReviewed ? (
-              <>
-                <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 inline-flex items-center justify-center font-bold text-[11px] shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+              <div className="flex items-center gap-2 text-status-supported-text font-medium">
+                <span className="w-4 h-4 rounded-full bg-status-supported-bg inline-flex items-center justify-center text-[11px] font-bold">
                   ✓
                 </span>
-                <span className="font-medium text-zinc-200">
-                  All {changes.length} changes reviewed. Locked in at{" "}
-                  <strong className="text-emerald-400 font-semibold">{atsReport.totalScore}% ATS Score</strong>.
+                <span>
+                  All {changes.length} diffs reviewed. Verification Gateway unlocked.
                 </span>
-              </>
+              </div>
             ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_6px_#FBBF24]" />
-                <span className="text-zinc-200">
-                  <strong className="font-semibold text-white">
+              <div className="flex items-center gap-2 text-ink">
+                <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+                <span>
+                  <strong className="font-semibold text-ink">
                     {pendingCount} {pendingCount === 1 ? "change" : "changes"} left to review
                   </strong>{" "}
-                  <span className="text-zinc-400 hidden md:inline">
-                    — accept, reject, or edit each item to reach{" "}
-                    <span className="text-emerald-400 font-medium">{atsReport.potentialMaxScore}% ATS score</span>.
+                  <span className="text-ink-secondary hidden sm:inline">
+                    — Accept, reject, or edit each item to proceed.
                   </span>
                 </span>
-              </>
+              </div>
             )}
           </div>
 
-          {/* Right: Consolidated Accept All (Single Location) + Primary Continue CTA */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          {/* Action Buttons: Accept All + Primary Continue */}
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             {pendingCount > 0 && (
               <button
                 type="button"
                 onClick={handleAcceptAll}
-                className="min-h-[44px] h-10 sm:h-9 px-4 rounded-xl sm:rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-white/[0.1] inline-flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+                className="pill-btn pill-btn-secondary px-4 py-2 text-[13px] min-h-[38px] cursor-pointer"
               >
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Accept All ({pendingCount})</span>
               </button>
             )}
@@ -842,13 +450,13 @@ export default function SplitScreenReview({
               type="button"
               disabled={!allReviewed}
               onClick={() => onContinueToDownload && onContinueToDownload(changes)}
-              className={`min-h-[44px] h-10 sm:h-9 px-4 rounded-xl sm:rounded-lg text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-all ${
+              className={`pill-btn px-5 py-2 text-[13px] font-medium gap-1.5 min-h-[38px] transition-all ${
                 allReviewed
-                  ? "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] cursor-pointer active:scale-[0.98]"
-                  : "bg-zinc-800/60 text-zinc-500 border border-white/[0.05] cursor-not-allowed"
+                  ? "pill-btn-primary shadow-subtle cursor-pointer"
+                  : "bg-surface border border-hairline text-ink-secondary opacity-50 cursor-not-allowed"
               }`}
             >
-              <span>Continue to Download</span>
+              <span>Continue to Export</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -859,112 +467,79 @@ export default function SplitScreenReview({
 }
 
 // ============================================================================
-// Subcomponent: Redesigned Zero-Overlap Inline Diff Card
+// Inline Diff Card Component
 // ============================================================================
-interface RedesignedDiffCardProps {
+interface InlineDiffCardProps {
   change: BulletChange;
-  diag?: {
-    diffId: string;
-    hasStrongVerb: boolean;
-    hasQuantifiedMetric: boolean;
-    wordCount: number;
-    pointContribution: number;
-  };
-  isActive: boolean;
   isEditing: boolean;
   draftText: string;
-  onSelect: () => void;
   onAccept: () => void;
   onReject: () => void;
-  onReset: () => void;
+  onUndo: () => void;
   onStartEdit: () => void;
   onChangeDraft: (val: string) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
 }
 
-function RedesignedDiffCard({
+function InlineDiffCard({
   change,
-  diag,
-  isActive,
   isEditing,
   draftText,
-  onSelect,
   onAccept,
   onReject,
-  onReset,
+  onUndo,
   onStartEdit,
   onChangeDraft,
   onSaveEdit,
   onCancelEdit,
-}: RedesignedDiffCardProps) {
+}: InlineDiffCardProps) {
   const isResolved = change.decision !== "pending";
-  const overBudget = draftText.length > change.charBudget;
+  const budget = change.charBudget || 160;
+  const currentLen = isEditing ? draftText.length : (change.editedText ?? change.proposedText).length;
+  const budgetRatio = currentLen / budget;
+  const isOverBudget = budgetRatio > 1.0;
+  const isNearLimit = budgetRatio >= 0.9 && !isOverBudget;
 
   return (
     <div
-      role="article"
-      tabIndex={0}
-      aria-label={`Diff slot for ${change.section}: ${change.roleTitle || "Experience"}`}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          if ((e.target as HTMLElement).tagName !== "BUTTON" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
-            e.preventDefault();
-            onSelect();
-          }
-        }
-      }}
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 ${
+      className={`rounded-xl border transition-all duration-200 overflow-hidden ${
         isResolved
-          ? "bg-[#18181b]/60 border-white/[0.08]"
-          : isActive
-          ? "bg-[#1c1c1e] border-blue-500/60 shadow-[0_4px_24px_rgba(0,113,227,0.18)]"
-          : "bg-[#141416] border-white/[0.07] hover:border-white/[0.14] cursor-pointer"
+          ? "bg-surface/50 border-hairline"
+          : "bg-canvas border-hairline shadow-subtle hover:border-accent/30"
       }`}
     >
-      {/* 1. CARD HEADER BAR: Metadata Badges + Top-Right Action Controls (Zero text overlap) */}
-      <div className="px-4 py-3 border-b border-white/[0.05] flex items-center justify-between gap-3 flex-wrap">
-        {/* Left: Metadata Badges */}
+      {/* 1. Header Bar: Status Chip + Fact ID + Actions */}
+      <div className="px-4 py-2.5 bg-surface/70 border-b border-hairline flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           {change.matchType === "direct" ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-[11px] font-medium bg-status-supported-bg text-status-supported-text border border-status-supported-text/20">
               <ShieldCheck className="w-3 h-3" />
-              <span>Supported • Direct Match</span>
+              <span>Supported · Direct Match</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-[11px] font-medium bg-status-transferable-bg text-status-transferable-text border border-status-transferable-text/20">
               <AlertCircle className="w-3 h-3" />
-              <span>Transferable • Verified</span>
+              <span>Transferable · Verified</span>
             </span>
           )}
 
-          <span
-            title={change.evidenceSourceQuote}
-            className="font-mono text-[11px] text-zinc-400 bg-white/[0.04] px-2.5 py-0.5 rounded-full border border-white/[0.08]"
-          >
+          <span className="font-mono text-[11px] text-ink-secondary bg-canvas px-2 py-0.5 rounded-pill border border-hairline">
             Fact ID: {change.evidenceId}
           </span>
-
-          {diag && (
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              +{diag.pointContribution} ATS pts
-            </span>
-          )}
         </div>
 
-        {/* Right: Action Buttons Group (Aligned at top right) */}
-        <div className="flex items-center gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
           {isResolved ? (
             <div className="flex items-center gap-2">
               <span
-                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border ${
+                className={`text-[12px] font-medium px-2.5 py-0.5 rounded-pill border ${
                   change.decision === "accepted"
-                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                    ? "bg-status-supported-bg text-status-supported-text border-status-supported-text/20"
                     : change.decision === "rejected"
-                    ? "text-zinc-400 bg-zinc-800/80 border-white/[0.08]"
-                    : "text-blue-400 bg-blue-500/10 border-blue-500/20"
+                    ? "bg-surface text-ink-secondary border-hairline"
+                    : "bg-accent/10 text-accent border-accent/20"
                 }`}
               >
                 {change.decision === "accepted" && "✓ Accepted"}
@@ -974,50 +549,40 @@ function RedesignedDiffCard({
 
               <button
                 type="button"
-                onClick={onReset}
-                aria-label="Undo bullet decision and restore pending state"
-                className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] inline-flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
+                onClick={onUndo}
+                className="text-[12px] text-link hover:underline cursor-pointer"
                 title="Undo decision"
               >
-                <Undo2 className="w-3.5 h-3.5" />
-                <span>Undo</span>
+                Undo
               </button>
             </div>
           ) : (
             !isEditing && (
-              <div className="flex items-center gap-1.5">
-                {/* Accept */}
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onAccept}
-                  aria-label="Accept proposed revision"
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-full text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 inline-flex items-center justify-center gap-1 transition-all shadow-sm active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  className="pill-btn pill-btn-primary px-3 py-1 text-[12px] min-h-[28px]"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-3 h-3 mr-1" />
                   <span>Accept</span>
                 </button>
 
-                {/* Reject */}
                 <button
                   type="button"
                   onClick={onReject}
-                  aria-label="Reject proposed revision and retain original bullet"
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-red-400 hover:bg-red-500/10 inline-flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-red-400"
+                  className="pill-btn pill-btn-secondary px-3 py-1 text-[12px] min-h-[28px]"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3 mr-1" />
                   <span>Reject</span>
                 </button>
 
-                {/* Edit */}
                 <button
                   type="button"
                   onClick={onStartEdit}
-                  aria-label="Edit proposed revision directly"
-                  className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-9 sm:h-7 px-3 sm:px-2.5 rounded-full text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/10 inline-flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500"
-                  title="Edit phrasing directly"
+                  className="text-[12px] text-link hover:underline cursor-pointer ml-1"
                 >
-                  <Pencil className="w-3 h-3" />
-                  <span>Edit</span>
+                  Edit
                 </button>
               </div>
             )
@@ -1025,104 +590,302 @@ function RedesignedDiffCard({
         </div>
       </div>
 
-      {/* 2. DIFF BODY: Git / Notion style Inline Diff */}
+      {/* 2. Diff Body */}
       <div className="p-4 space-y-2.5">
         {isResolved ? (
-          <p className="text-sm text-zinc-200 leading-relaxed pl-2 border-l-2 border-emerald-500/50">
+          /* Gracefully collapsed state */
+          <p className="text-[13px] text-ink leading-relaxed">
             {change.decision === "rejected"
               ? change.originalText
               : change.decision === "edited"
               ? change.editedText
               : change.proposedText}
           </p>
-        ) : (
-          <div className="space-y-2">
-            {/* Original Text (subtle red/slate strikethrough with '-' gutter indicator) */}
-            <div className="flex items-start gap-2.5 text-xs text-zinc-500 pl-1 font-sans">
-              <span className="select-none font-mono font-bold text-red-400/70 mt-0.5">
-                -
-              </span>
-              <p className="line-through leading-relaxed">{change.originalText}</p>
+        ) : isEditing ? (
+          /* Inline Editor with Live Character-Budget Tracking */
+          <div className="space-y-2.5">
+            <textarea
+              rows={3}
+              value={draftText}
+              autoFocus
+              onChange={(e) => onChangeDraft(e.target.value)}
+              className="w-full rounded-xl border border-hairline bg-canvas p-3 text-[13px] text-ink leading-relaxed apple-focus-ring resize-y"
+            />
+
+            {/* Character Budget Tracking Bar */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span
+                  className={
+                    isOverBudget
+                      ? "text-danger font-semibold"
+                      : isNearLimit
+                      ? "text-warning font-medium"
+                      : "text-ink-secondary"
+                  }
+                >
+                  Character Budget: {draftText.length} / {budget}
+                  {isOverBudget && " (Over single-page limit)"}
+                </span>
+                <span className="text-ink-secondary">
+                  {Math.round(budgetRatio * 100)}%
+                </span>
+              </div>
+              <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden border border-hairline">
+                <div
+                  className={`h-full transition-all duration-150 rounded-full ${
+                    isOverBudget
+                      ? "bg-danger"
+                      : isNearLimit
+                      ? "bg-warning"
+                      : "bg-accent"
+                  }`}
+                  style={{ width: `${Math.min(100, budgetRatio * 100)}%` }}
+                />
+              </div>
             </div>
 
-            {/* Proposed Text (crisp white/emerald highlight with '+' gutter indicator) or Inline Editor */}
-            {isEditing ? (
-              <div
-                className="space-y-2 pt-1"
-                onClick={(e) => e.stopPropagation()}
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="pill-btn pill-btn-secondary px-3 py-1 text-[12px] min-h-[28px]"
               >
-                <textarea
-                  rows={3}
-                  value={draftText}
-                  autoFocus
-                  aria-label="Edit proposed line text"
-                  onChange={(e) => onChangeDraft(e.target.value)}
-                  className="w-full rounded-xl border border-white/15 bg-black/70 p-3 text-[14px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed font-sans placeholder-zinc-500 transition-all"
-                />
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <span
-                    className={`font-mono text-[11px] px-2 py-0.5 rounded ${
-                      overBudget ? "bg-red-500/10 text-red-400 font-semibold border border-red-500/20" : "text-zinc-400"
-                    }`}
-                  >
-                    {draftText.length} / {change.charBudget} chars{" "}
-                    {overBudget && "(Exceeds 1-line budget)"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={onCancelEdit}
-                      aria-label="Cancel editing"
-                      className="px-3 py-1.5 rounded-full text-xs text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onSaveEdit}
-                      aria-label="Save line revision"
-                      className="px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
-                    >
-                      Save Line
-                    </button>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onSaveEdit}
+                className="pill-btn pill-btn-primary px-3 py-1 text-[12px] min-h-[28px]"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Normal Diff Presentation */
+          <div className="space-y-2 text-[13px]">
+            {/* Removed Text (8% danger tint with strikethrough in secondary text) */}
+            <div className="diff-removed p-2.5 rounded-lg flex items-start gap-2 leading-relaxed">
+              <span className="font-mono font-bold select-none text-danger shrink-0">-</span>
+              <span>{change.originalText}</span>
+            </div>
+
+            {/* Added Text (10% success tint) */}
+            <div className="diff-added p-2.5 rounded-lg flex items-start gap-2 leading-relaxed">
+              <span className="font-mono font-bold select-none text-status-supported-text shrink-0">+</span>
+              <span>{change.proposedText}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. One-Line "Why" Footer */}
+      <div className="bg-surface/50 border-t border-hairline px-4 py-2 text-[12px] text-ink-secondary flex items-baseline gap-1.5">
+        <strong className="font-medium text-ink shrink-0">Why:</strong>
+        <span className="leading-snug">{change.reason}</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Rubric Panel Content Component
+// ============================================================================
+interface RubricPanelContentProps {
+  atsReport: ReturnType<typeof evaluateResumeATS>;
+  directReqs: JDRequirement[];
+  transferableReqs: JDRequirement[];
+  missingReqs: JDRequirement[];
+  directOpen: boolean;
+  setDirectOpen: (open: boolean) => void;
+  transferableOpen: boolean;
+  setTransferableOpen: (open: boolean) => void;
+  missingOpen: boolean;
+  setMissingOpen: (open: boolean) => void;
+}
+
+function RubricPanelContent({
+  atsReport,
+  directReqs,
+  transferableReqs,
+  missingReqs,
+  directOpen,
+  setDirectOpen,
+  transferableOpen,
+  setTransferableOpen,
+  missingOpen,
+  setMissingOpen,
+}: RubricPanelContentProps) {
+  return (
+    <div className="space-y-4 font-sans">
+      {/* Overall Score Card */}
+      <div className="apple-card p-5 space-y-3">
+        <span className="text-[11px] font-mono uppercase tracking-wider text-ink-secondary block">
+          ATS Fit Rubric
+        </span>
+        <div className="flex items-baseline gap-2">
+          <span className="text-[36px] font-bold text-ink tracking-tight">
+            {atsReport.totalScore}
+          </span>
+          <span className="text-[14px] text-ink-secondary">/ 100</span>
+          {atsReport.scoreDelta > 0 && (
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text border border-status-supported-text/20">
+              +{atsReport.scoreDelta} pts vs Master
+            </span>
+          )}
+        </div>
+
+        {/* Progress Bar */}
+        <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden border border-hairline">
+          <div
+            className="h-full bg-accent transition-all duration-300 rounded-full"
+            style={{ width: `${atsReport.totalScore}%` }}
+          />
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-2 gap-2 pt-1 text-[12px]">
+          <div className="p-2.5 rounded-xl bg-surface border border-hairline">
+            <span className="text-[11px] text-ink-secondary block">Direct Matches</span>
+            <span className="text-[15px] font-semibold text-status-supported-text">
+              {directReqs.length}
+            </span>
+          </div>
+          <div className="p-2.5 rounded-xl bg-surface border border-hairline">
+            <span className="text-[11px] text-ink-secondary block">Transferable</span>
+            <span className="text-[15px] font-semibold text-status-transferable-text">
+              {transferableReqs.length}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Collapsible Direct Matches */}
+      <div className="apple-card overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setDirectOpen(!directOpen)}
+          className="w-full p-4 flex items-center justify-between text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-status-supported-text" />
+            <span className="text-[13px] font-semibold text-ink">
+              Direct Matches ({directReqs.length})
+            </span>
+          </div>
+          <ChevronDown
+            className={`w-4 h-4 text-ink-secondary transition-transform duration-200 ${
+              directOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {directOpen && (
+          <div className="px-4 pb-4 space-y-2 border-t border-hairline pt-3">
+            {directReqs.length === 0 ? (
+              <p className="text-[12px] text-ink-secondary">No direct matches identified.</p>
+            ) : (
+              directReqs.map((req) => (
+                <div
+                  key={req.id}
+                  className="text-[12px] p-2.5 rounded-lg bg-surface border border-hairline space-y-1"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-ink leading-snug">{req.text}</span>
+                    {req.linkedEvidenceId && (
+                      <span className="font-mono text-[10px] text-accent shrink-0">
+                        {req.linkedEvidenceId}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-start gap-2.5 text-[14px] text-zinc-100 bg-emerald-500/[0.04] border-l-2 border-emerald-500 pl-2.5 py-2 rounded-r font-medium">
-                <span className="select-none font-mono font-bold text-emerald-400 mt-0.5">
-                  +
-                </span>
-                <p className="leading-relaxed">{change.proposedText}</p>
-              </div>
+              ))
             )}
           </div>
         )}
       </div>
 
-      {/* 3. AI RATIONALE FOOTER: Recessed callout footer (Zero overlap with action buttons) */}
-      <div className="bg-zinc-950/60 border-t border-white/[0.05] px-4 py-2.5 text-xs text-zinc-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="space-y-0.5 min-w-0">
-          <div className="flex items-start gap-1.5 leading-relaxed">
-            <strong className="text-zinc-300 font-medium shrink-0">Why:</strong>
-            <span className="text-zinc-300">{change.reason}</span>
+      {/* Collapsible Transferable */}
+      <div className="apple-card overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setTransferableOpen(!transferableOpen)}
+          className="w-full p-4 flex items-center justify-between text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-status-transferable-text" />
+            <span className="text-[13px] font-semibold text-ink">
+              Transferable ({transferableReqs.length})
+            </span>
           </div>
-          <div
-            title={change.evidenceSourceQuote}
-            className="font-mono text-[11px] text-zinc-500 truncate"
-          >
-            {change.evidenceSourceQuote}
+          <ChevronDown
+            className={`w-4 h-4 text-ink-secondary transition-transform duration-200 ${
+              transferableOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {transferableOpen && (
+          <div className="px-4 pb-4 space-y-2 border-t border-hairline pt-3">
+            {transferableReqs.length === 0 ? (
+              <p className="text-[12px] text-ink-secondary">No transferable requirements identified.</p>
+            ) : (
+              transferableReqs.map((req) => (
+                <div
+                  key={req.id}
+                  className="text-[12px] p-2.5 rounded-lg bg-surface border border-hairline space-y-1"
+                >
+                  <span className="text-ink leading-snug block">{req.text}</span>
+                  {req.note && (
+                    <span className="text-[11px] text-ink-secondary block italic">
+                      {req.note}
+                    </span>
+                  )}
+                </div>
+              ))
+            )}
           </div>
-        </div>
+        )}
+      </div>
 
-        {diag && (
-          <div className="flex items-center gap-2.5 font-mono text-[10px] shrink-0 self-end sm:self-auto pt-1 sm:pt-0">
-            <span className={diag.hasStrongVerb ? "text-emerald-400" : "text-amber-400"}>
-              {diag.hasStrongVerb ? "✓ Action Verb" : "• Weak Verb"}
+      {/* Collapsible Missing (visibly marked 'left out to keep your resume truthful') */}
+      <div className="apple-card overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setMissingOpen(!missingOpen)}
+          className="w-full p-4 flex items-center justify-between text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-status-missing-text" />
+            <span className="text-[13px] font-semibold text-ink">
+              Missing ({missingReqs.length})
             </span>
-            <span className={diag.hasQuantifiedMetric ? "text-emerald-400" : "text-amber-400"}>
-              {diag.hasQuantifiedMetric ? "✓ Quantified" : "• Add Metric"}
-            </span>
+          </div>
+          <ChevronDown
+            className={`w-4 h-4 text-ink-secondary transition-transform duration-200 ${
+              missingOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+        {missingOpen && (
+          <div className="px-4 pb-4 space-y-2.5 border-t border-hairline pt-3">
+            <div className="p-2 rounded-lg bg-status-missing-bg border border-status-missing-text/20 text-status-missing-text text-[11px] leading-snug">
+              Left out to keep your resume truthful. Missing items are provided as talking points for interview preparation.
+            </div>
+            {missingReqs.length === 0 ? (
+              <p className="text-[12px] text-ink-secondary">No missing qualifications detected.</p>
+            ) : (
+              missingReqs.map((req) => (
+                <div
+                  key={req.id}
+                  className="text-[12px] p-2.5 rounded-lg bg-surface border border-hairline space-y-1"
+                >
+                  <span className="text-ink leading-snug block">{req.text}</span>
+                  <span className="text-[11px] text-ink-secondary block">
+                    Talking point: {req.note || "Acknowledge in interview as adjacent area of active growth."}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>

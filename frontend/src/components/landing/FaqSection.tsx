@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FaqItem {
   question: string;
@@ -25,9 +26,9 @@ const faqs: FaqItem[] = [
       "No. We enforce strict per-bullet character budgets based on your original line lengths. After compilation, our PyMuPDF inspection engine verifies the exact page count. If page overflow occurs, our planner automatically applies subtle layout trims to lowest-ranked secondary items while preserving your primary achievements.",
   },
   {
-    question: "Why do you provide a 'Fit Estimate' instead of an 'ATS Probability Score'?",
+    question: "Why do you provide a rubric fit estimate instead of a fake ATS percentage?",
     answer:
-      "Because ATS score percentages are misleading marketing gimmicks. Real employers configure their applicant tracking systems with widely differing filters, and keyword frequency does not predict shortlists. Slang calculates a transparent, rubric-based fit score based on empirical evidence coverage, and uses PyMuPDF to test actual ATS text stream extraction.",
+      "Because arbitrary ATS score percentages are misleading gimmicks. Real employers configure their applicant tracking systems with widely differing filters, and keyword frequency does not predict shortlists. Slang calculates a transparent, rubric-based fit score based on empirical evidence coverage, and uses PyMuPDF to test actual ATS text stream extraction.",
   },
   {
     question: "How do you handle career transitions (e.g. IT to Product Management)?",
@@ -37,7 +38,7 @@ const faqs: FaqItem[] = [
   {
     question: "How is my personal and career privacy protected?",
     answer:
-      "We apply end-to-end HTTPS, per-user isolation, and encryption at rest. Personal contact details (phone, email, address) are automatically redacted before sending bullet content to language model inference endpoints. In accordance with privacy regulations, a 1-click 'Delete My Data' button instantly purges all your uploaded resumes and evidence records.",
+      "We apply end-to-end HTTPS, per-user isolation, and encryption at rest. Personal contact details (phone, email, address) are automatically redacted before sending bullet content to language model inference endpoints. In accordance with privacy regulations, a 1-click 'Delete All My Data' button instantly purges all your uploaded resumes and evidence records.",
   },
 ];
 
@@ -49,21 +50,21 @@ export function FaqSection() {
   };
 
   return (
-    <section className="py-24 md:py-32 bg-[var(--bg)]">
-      <div className="max-w-[980px] mx-auto px-6">
-        <div className="text-center max-w-[680px] mx-auto mb-16">
-          <p className="text-[13px] font-semibold uppercase tracking-wider text-[var(--blue)] mb-3">
+    <section className="py-20 md:py-28 bg-canvas border-t border-hairline">
+      <div className="max-w-[820px] mx-auto px-4 sm:px-6">
+        <div className="text-center max-w-[620px] mx-auto mb-14">
+          <span className="text-[12px] font-semibold uppercase tracking-wider text-accent mb-2 block">
             Questions & Answers
-          </p>
-          <h2 className="section-title text-[var(--ink)] mb-4">
+          </span>
+          <h2 className="apple-h1 text-ink mb-3">
             Frequently Asked Questions
           </h2>
-          <p className="section-sub">
+          <p className="apple-body text-ink-secondary">
             Everything you need to know about our evidence architecture, LaTeX safety sandbox, and privacy guarantees.
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {faqs.map((faq, i) => {
             const isOpen = openIdx === i;
             return (
@@ -72,24 +73,35 @@ export function FaqSection() {
                 className="apple-card overflow-hidden transition-all duration-200"
               >
                 <button
+                  type="button"
                   onClick={() => toggle(i)}
-                  className="w-full p-6 text-left flex items-center justify-between gap-4"
+                  className="w-full p-5 text-left flex items-center justify-between gap-4 cursor-pointer"
                   aria-expanded={isOpen}
                 >
-                  <span className="text-[17px] font-semibold text-[var(--ink)] tracking-tight">
+                  <span className="text-[16px] font-semibold text-ink tracking-tight">
                     {faq.question}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-[var(--ink-2)] shrink-0 transition-transform duration-300 ${
-                      isOpen ? "rotate-180 text-[var(--blue)]" : ""
+                    className={`w-4 h-4 text-ink-secondary shrink-0 transition-transform duration-200 ${
+                      isOpen ? "rotate-180 text-accent" : ""
                     }`}
                   />
                 </button>
-                {isOpen && (
-                  <div className="px-6 pb-6 pt-0 text-[15px] leading-relaxed text-[var(--ink-2)] border-t border-[var(--line-light)] mt-2 pt-4">
-                    {faq.answer}
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: [0.28, 0.11, 0.32, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-5 text-[14px] leading-relaxed text-ink-secondary border-t border-hairline pt-3">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}

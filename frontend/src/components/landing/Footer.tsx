@@ -2,64 +2,50 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, Lock, FileText, Trash2 } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-[var(--bg)] border-t border-[var(--line-light)] text-[12px] text-[var(--ink-2)] py-12 pb-24 md:pb-14">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 pb-12 border-b border-[var(--line-light)]">
-          <div className="sm:col-span-2">
-            <span className="font-semibold text-[15px] text-[var(--ink)] block mb-2">
-              Slang Precision Engine
+    <footer className="border-t border-hairline bg-surface text-[12px] text-ink-secondary py-10 pb-20 md:pb-12">
+      <div className="max-w-[980px] mx-auto px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-hairline">
+          <div>
+            <span className="font-semibold text-ink text-[13px] block mb-1">
+              Slang
             </span>
-            <p className="max-w-[320px] leading-relaxed text-[var(--ink-2)] mb-4">
-              Evidence-anchored resume tailoring for LaTeX-native engineers, managers, and career switchers.
+            <p className="max-w-[420px] text-ink-secondary leading-relaxed">
+              Precision LaTeX resume tailoring engine. Evidence-anchored claims, guaranteed ATS layout preservation, and zero fabrication.
             </p>
-            <div className="flex items-center gap-2 text-[11px] text-[var(--ink-2)]">
-              <span className="w-2 h-2 rounded-full bg-[#34c759]" />
-              <span>Compilation Sandboxes Operational</span>
-            </div>
           </div>
 
-          <div>
-            <h5 className="font-semibold text-[13px] text-[var(--ink)] mb-3">Product</h5>
-            <ul className="space-y-2">
-              <li><Link href="/studio" className="hover:text-[var(--ink)]">Studio</Link></li>
-              <li><Link href="/diff" className="hover:text-[var(--ink)]">Diff Review</Link></li>
-              <li><Link href="/report" className="hover:text-[var(--ink)]">Fit Rubric</Link></li>
-              <li><Link href="/siblings" className="hover:text-[var(--ink)]">Resume Siblings</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h5 className="font-semibold text-[13px] text-[var(--ink)] mb-3">Architecture</h5>
-            <ul className="space-y-2">
-              <li><Link href="/evidence" className="hover:text-[var(--ink)]">Evidence Bank</Link></li>
-              <li><a href="#how-it-works" className="hover:text-[var(--ink)]">Tectonic Sandbox</a></li>
-              <li><a href="#trust-matrix" className="hover:text-[var(--ink)]">PyMuPDF ATS Check</a></li>
-              <li><a href="#career-transitions" className="hover:text-[var(--ink)]">O*NET & ESCO Mapping</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h5 className="font-semibold text-[13px] text-[var(--ink)] mb-3">Trust & Privacy</h5>
-            <ul className="space-y-2">
-              <li><Link href="/settings" className="hover:text-[var(--ink)]">Privacy Isolation</Link></li>
-              <li><Link href="/settings" className="hover:text-[var(--ink)]">Export My Data</Link></li>
-              <li><Link href="/settings" className="hover:text-red-500 flex items-center gap-1">
-                <Trash2 className="w-3 h-3" /> Delete All Data
-              </Link></li>
-            </ul>
+          <div className="flex flex-wrap items-center gap-6 text-[12px]">
+            <Link href="/workspace" className="text-ink-secondary hover:text-ink transition-colors">
+              Workspace
+            </Link>
+            <Link href="/library" className="text-ink-secondary hover:text-ink transition-colors">
+              Library
+            </Link>
+            <Link href="/siblings" className="text-ink-secondary hover:text-ink transition-colors">
+              Siblings
+            </Link>
+            <Link href="/evidence" className="text-ink-secondary hover:text-ink transition-colors">
+              Evidence
+            </Link>
+            <Link href="/account" className="text-ink-secondary hover:text-ink transition-colors">
+              Account
+            </Link>
           </div>
         </div>
 
-        <div className="pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p>© 2026 Slang Engineering Group. Built for precision and uncompromised truth.</p>
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            <Link href="/settings" className="hover:text-[var(--ink)]">Privacy Policy</Link>
-            <Link href="/settings" className="hover:text-[var(--ink)]">Terms of Service</Link>
-            <Link href="/settings" className="hover:text-[var(--ink)]">Data Retention Rubric</Link>
+        <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p className="text-ink-tertiary">
+            © {new Date().getFullYear()} Slang. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6 text-ink-tertiary">
+            <span>Deterministic Tectonic Compilation</span>
+            <span>·</span>
+            <Link href="/account" className="hover:text-ink transition-colors">
+              Privacy & Data Erasure
+            </Link>
           </div>
         </div>
       </div>

@@ -4,14 +4,12 @@ import React, { useState } from "react";
 import {
   UploadCloud,
   CheckCircle2,
-  FileText,
-  Plus,
   ArrowRight,
-  ShieldCheck,
-  Sparkles,
   Trash2,
   AlertCircle,
+  FileCode,
 } from "lucide-react";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 interface Step1InputProps {
   onGenerateDraft: (data: {
@@ -26,9 +24,20 @@ interface Step1InputProps {
   initialJdText?: string;
 }
 
+const ORIENTATION_OPTIONS = [
+  { id: "Same Field", label: "Same Field" },
+  { id: "Career Pivot", label: "Career Pivot" },
+  { id: "Entry Level", label: "Entry Level" },
+];
+
+const ORIENTATION_HELPERS: Record<string, string> = {
+  "Same Field": "Optimizes metrics, tool proficiency, and technical depth within your current domain.",
+  "Career Pivot": "Reframes transferable achievements across industry boundaries with verifiable evidence.",
+  "Entry Level": "Highlights core technical foundations, coursework, and open-source contributions.",
+};
+
 export function Step1Input({
   onGenerateDraft,
-  onOpenEvidenceModal,
   candidateName,
   isProcessing = false,
   hasExistingResume = false,
@@ -39,12 +48,6 @@ export function Step1Input({
   const [transitionMode, setTransitionMode] = useState<"Same Field" | "Career Pivot" | "Entry Level">("Career Pivot");
   const [dragActive, setDragActive] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (initialJdText !== undefined) {
-      setJdText(initialJdText);
-    }
-  }, [initialJdText]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -57,22 +60,37 @@ export function Step1Input({
     e.preventDefault();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
-      setValidationError(null);
+      const file = e.dataTransfer.files[0];
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      if (ext === "tex" || ext === "pdf") {
+        setSelectedFile(file);
+        setValidationError(null);
+      } else {
+        setValidationError("Please drop a valid .tex or .pdf resume file.");
+      }
     }
   };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+  };
+
+  const jdCharCount = jdText.trim().length;
+  const isJdValid = jdCharCount >= 30;
+  const hasResume = Boolean(selectedFile || hasExistingResume);
+  const isFormValid = hasResume && isJdValid;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
 
-    if (!selectedFile && !hasExistingResume) {
+    if (!hasResume) {
       setValidationError("Please upload your master resume (.tex or .pdf) first.");
       return;
     }
 
-    if (!jdText.trim() || jdText.trim().length < 30) {
-      setValidationError("Please paste a target Job Description with role requirements (minimum 30 characters).");
+    if (!isJdValid) {
+      setValidationError("Please paste a target Job Description (minimum 30 characters).");
       return;
     }
 
@@ -83,238 +101,197 @@ export function Step1Input({
     });
   };
 
-
-
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-[1120px] mx-auto space-y-8">
-      <div className="text-center space-y-2">
-        <h2 className="text-[28px] sm:text-[34px] font-semibold tracking-tight text-ink">
-          Step 1: Master Resume & Target Job
-        </h2>
-        <p className="text-[14px] text-ink-muted max-w-[540px] mx-auto">
-          Upload your existing LaTeX (.tex) or PDF resume. Your original styling, margins, and preamble are 100% locked.
+    <div className="w-full max-w-[680px] mx-auto py-4">
+      {/* Centred Header */}
+      <div className="text-center space-y-2 mb-8">
+        <h1 className="apple-h1 text-ink">
+          Tailor Your Resume
+        </h1>
+        <p className="apple-body text-ink-secondary max-w-[480px] mx-auto text-[15px]">
+          Upload your LaTeX master file and target job description. Your layout and preamble remain strictly locked.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Upload Resume (6 cols) */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-[12px] font-semibold uppercase tracking-wider text-ink-muted">
-              Master Resume (.tex or .pdf)
-            </label>
-            <button
-              type="button"
-              onClick={onOpenEvidenceModal}
-              className="inline-flex items-center gap-1 text-[12px] text-accent hover:underline"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add extra projects or GitHub facts
-            </button>
-          </div>
-
-          {/* Drag & Drop Card */}
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragActive(true);
-            }}
-            onDragLeave={() => setDragActive(false)}
-            onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-card p-8 text-center transition-all duration-fast ease-apple relative ${
-              dragActive
-                ? "border-accent bg-accent/5"
-                : selectedFile
-                ? "border-status-supported-text/50 bg-canvas"
-                : validationError && !selectedFile
-                ? "border-red-500/80 bg-red-500/5 ring-2 ring-red-500/20"
-                : "border-hairline bg-canvas hover:border-ink-muted/50"
-            }`}
-          >
-            <input
-              type="file"
-              accept=".tex,.pdf"
-              id="resume-file-input"
-              onChange={handleFileChange}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-
-            {selectedFile ? (
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-full bg-status-supported-bg text-status-supported-text mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-[15px] font-semibold text-ink">
-                    {selectedFile.name}
-                  </h4>
-                  <p className="text-[12px] text-ink-muted mt-0.5">
-                    {(selectedFile.size / 1024).toFixed(1)} KB • Ready for precision tailoring
-                  </p>
-                </div>
-                {/* Recognition Badge */}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-status-supported-bg text-status-supported-text text-[11px] font-medium">
-                  <span>✓</span>
-                  Template recognised • 1 page • Formatting locked
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSelectedFile(null);
-                      const input = document.getElementById("resume-file-input") as HTMLInputElement;
-                      if (input) input.value = "";
-                    }}
-                    className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[12px] font-medium text-red-500 hover:text-red-600 bg-red-500/10 hover:bg-red-500/20 rounded-pill transition-colors cursor-pointer relative z-10"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Remove Selected File
-                  </button>
-                </div>
-              </div>
-            ) : hasExistingResume ? (
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-full bg-status-supported-bg text-status-supported-text mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-[15px] font-semibold text-ink">
-                    {candidateName && candidateName !== "Candidate" ? `${candidateName}'s Master Resume` : "Master Resume Active"}
-                  </h4>
-                  <p className="text-[12px] text-ink-muted mt-0.5">
-                    Ready to tailor for this target role • Drop a new file to change
-                  </p>
-                </div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-status-supported-bg text-status-supported-text text-[11px] font-medium">
-                  <span>✓</span>
-                  Master Preamble & Formatting Locked
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-full bg-surface text-ink-muted mx-auto flex items-center justify-center">
-                  <UploadCloud className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-[15px] font-semibold text-ink">
-                    Drop your .tex or .pdf resume here
-                  </h4>
-                  <p className="text-[12px] text-ink-muted mt-0.5">
-                    or click to browse your files
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Paste JD & Transition Mode (6 cols) */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-[12px] font-semibold uppercase tracking-wider text-ink-muted">
-              Target Job Description
-            </label>
-            {jdText && (
-              <button
-                type="button"
-                onClick={() => setJdText("")}
-                className="text-[12px] text-ink-muted hover:text-red-500 transition-colors cursor-pointer"
-              >
-                Clear JD
-              </button>
-            )}
-          </div>
-
-          <textarea
-            rows={7}
-            required
-            value={jdText}
-            onChange={(e) => {
-              setJdText(e.target.value);
-              if (validationError && e.target.value.trim().length >= 30) {
-                setValidationError(null);
-              }
-            }}
-            placeholder="Paste the target job description requirements, responsibilities, and qualifications (minimum 30 characters)..."
-            className={`w-full min-h-[40dvh] sm:min-h-[220px] p-4 rounded-card border bg-canvas text-[16px] sm:text-[14px] text-ink focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-y ${
-              validationError && (!jdText.trim() || jdText.trim().length < 30)
-                ? "border-red-500/80 ring-1 ring-red-500/20"
-                : "border-hairline"
-            }`}
-          />
-
-          {/* Mode Selection: Stacked cards on mobile, grid from sm/md up */}
-          <div className="space-y-2">
-            <label className="text-[12px] font-semibold uppercase tracking-wider text-ink-muted block">
-              Orientation Mode
-            </label>
-            <div
-              role="radiogroup"
-              aria-label="Transition mode"
-              className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 p-1 rounded-2xl sm:rounded-pill bg-hairline/30 border border-hairline text-center"
-            >
-              {(["Same Field", "Career Pivot", "Entry Level"] as const).map((mode) => {
-                const isActive = transitionMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    role="radio"
-                    aria-checked={isActive}
-                    onClick={() => setTransitionMode(mode)}
-                    className={`min-h-[44px] py-2 px-3 rounded-xl sm:rounded-pill text-[13px] font-medium transition-all duration-fast ease-apple flex items-center justify-center cursor-pointer ${
-                      isActive
-                        ? "bg-canvas text-ink shadow-subtle border sm:border-0 border-hairline"
-                        : "text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    {mode}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[11px] text-ink-muted px-1">
-              {transitionMode === "Same Field" && "Optimizes keywords and metrics for identical domain seniority."}
-              {transitionMode === "Career Pivot" && "Re-frames operational & analytical accomplishments for target domain without inventing titles."}
-              {transitionMode === "Entry Level" && "Elevates foundational projects, academic rigor, and verified coursework."}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Primary Submit Button with sticky bottom bar on mobile */}
-      <div className="sticky bottom-14 sm:static z-10 bg-surface/90 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none p-3 sm:p-0 pt-4 border-t sm:border-0 border-hairline -mx-4 sm:mx-0 text-center space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Validation Alert */}
         {validationError && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[13px] font-medium flex items-center justify-center gap-2 max-w-[580px] mx-auto text-center">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+          <div className="p-3.5 rounded-xl bg-status-missing-bg border border-status-missing-text/20 text-status-missing-text text-[13px] flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{validationError}</span>
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={!selectedFile || jdText.trim().length < 30 || isProcessing}
-          className={`w-full sm:w-auto min-h-[48px] inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-pill text-[15px] font-medium shadow-subtle transition-all duration-fast ease-apple ${
-            selectedFile && jdText.trim().length >= 30 && !isProcessing
-              ? "bg-accent text-white hover:bg-accent-hover cursor-pointer active:scale-[0.98]"
-              : "bg-hairline text-ink-muted/50 cursor-not-allowed opacity-60"
-          }`}
-        >
-          {isProcessing ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Generating Tailored Draft...
-            </>
+        {/* 1. Master Resume Upload Dropzone */}
+        <div className="space-y-2">
+          <label className="text-[13px] font-semibold text-ink flex items-center justify-between">
+            <span>Master Resume Source</span>
+            <span className="text-[11px] font-mono text-ink-secondary">.tex or .pdf</span>
+          </label>
+
+          {selectedFile ? (
+            /* Selected File Chip */
+            <div className="p-4 rounded-card bg-surface border border-hairline flex items-center justify-between shadow-subtle">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-canvas border border-hairline flex items-center justify-center text-accent shrink-0">
+                  <FileCode className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-ink truncate">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-[12px] text-ink-secondary font-mono">
+                    {(selectedFile.size / 1024).toFixed(1)} KB • Ready for AST parsing
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-ink-secondary hover:text-red-500 hover:bg-surface transition-colors cursor-pointer"
+                title="Remove file"
+                aria-label="Remove file"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ) : hasExistingResume ? (
+            /* Existing Session Resume Chip */
+            <div className="p-4 rounded-card bg-surface border border-hairline flex items-center justify-between shadow-subtle">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-status-supported-bg border border-status-supported-text/20 flex items-center justify-center text-status-supported-text shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-ink truncate">
+                    Active Master Resume Cached
+                  </p>
+                  <p className="text-[12px] text-ink-secondary">
+                    {candidateName ? `Candidate: ${candidateName}` : "Master LaTeX AST loaded"}
+                  </p>
+                </div>
+              </div>
+              <label
+                htmlFor="resume-upload"
+                className="pill-btn pill-btn-secondary px-3 py-1.5 text-[12px] cursor-pointer"
+              >
+                Replace
+                <input
+                  id="resume-upload"
+                  type="file"
+                  accept=".tex,.pdf"
+                  onChange={handleFileChange}
+                  className="sr-only"
+                />
+              </label>
+            </div>
           ) : (
-            <>
-              Generate Tailored Draft
-              <ArrowRight className="w-4 h-4" />
-            </>
+            /* Dropzone */
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              className={`relative border-2 border-dashed rounded-card p-8 text-center transition-all duration-200 cursor-pointer ${
+                dragActive
+                  ? "border-accent bg-accent/5 scale-[1.01]"
+                  : "border-hairline bg-surface hover:bg-canvas/50"
+              }`}
+            >
+              <input
+                id="resume-file-input"
+                type="file"
+                accept=".tex,.pdf"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                aria-label="Upload master resume"
+              />
+              <div className="flex flex-col items-center justify-center space-y-2 pointer-events-none">
+                <div className="w-11 h-11 rounded-full bg-canvas border border-hairline flex items-center justify-center text-ink-secondary mb-1 shadow-subtle">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <p className="text-[14px] font-semibold text-ink">
+                  Click to upload or drag & drop
+                </p>
+                <p className="text-[12px] text-ink-secondary">
+                  LaTeX (.tex) or PDF master resume
+                </p>
+              </div>
+            </div>
           )}
-        </button>
-      </div>
-    </form>
+        </div>
+
+        {/* 2. Target Job Description Textarea */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="jd-textarea" className="text-[13px] font-semibold text-ink">
+              Target Job Description
+            </label>
+            <span
+              className={`text-[12px] font-mono transition-colors ${
+                isJdValid ? "text-status-supported-text" : "text-ink-secondary"
+              }`}
+            >
+              {jdCharCount < 30 ? `${jdCharCount} / 30 min chars` : `${jdCharCount} chars`}
+            </span>
+          </div>
+
+          <textarea
+            id="jd-textarea"
+            rows={6}
+            value={jdText}
+            onChange={(e) => {
+              setJdText(e.target.value);
+              if (validationError) setValidationError(null);
+            }}
+            placeholder="Paste the target job description here. Include key responsibilities and qualifications to extract requirements..."
+            className="w-full p-4 rounded-xl bg-canvas border border-hairline text-[14px] text-ink leading-relaxed placeholder:text-ink-tertiary focus:outline-none apple-focus-ring resize-y min-h-[140px]"
+          />
+        </div>
+
+        {/* 3. Orientation Mode (Apple Segmented Control) */}
+        <div className="space-y-2 pt-1">
+          <label className="text-[13px] font-semibold text-ink block">
+            Career Orientation Mode
+          </label>
+          <div className="w-full flex justify-center">
+            <SegmentedControl
+              options={ORIENTATION_OPTIONS}
+              value={transitionMode}
+              onChange={(val) => setTransitionMode(val as "Same Field" | "Career Pivot" | "Entry Level")}
+              className="w-full justify-between"
+              name="orientation-mode"
+            />
+          </div>
+          {/* One-line helper under the selection */}
+          <p className="text-[12px] text-ink-secondary text-center min-h-[18px] transition-all duration-150">
+            {ORIENTATION_HELPERS[transitionMode]}
+          </p>
+        </div>
+
+        {/* Submit Action: Primary Pill CTA (disabled until valid) */}
+        <div className="pt-4">
+          <button
+            type="submit"
+            disabled={!isFormValid || isProcessing}
+            className={`w-full min-h-[48px] rounded-pill font-medium text-[15px] flex items-center justify-center gap-2 transition-all duration-200 ${
+              isFormValid && !isProcessing
+                ? "bg-accent text-white hover:bg-accent-hover shadow-subtle cursor-pointer active:scale-[0.99]"
+                : "bg-surface border border-hairline text-ink-secondary opacity-50 cursor-not-allowed"
+            }`}
+          >
+            <span>{isProcessing ? "Tailoring Draft..." : "Generate Truthful Draft"}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Quiet footer reassurance */}
+        <div className="text-center text-[12px] text-ink-tertiary font-mono pt-2">
+          Preamble locked • Single-page ATS budget enforced • Zero hallucinations
+        </div>
+      </form>
+    </div>
   );
 }

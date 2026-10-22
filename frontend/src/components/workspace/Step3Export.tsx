@@ -1,20 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import {
   CheckCircle2,
   Download,
   FileCode2,
   ChevronDown,
   HelpCircle,
-  ExternalLink,
-  ShieldCheck,
-  FileCheck2,
   AlertCircle,
   Loader2,
   FileText,
-  RefreshCw,
   Sparkles,
+  Copy,
+  Check,
 } from "lucide-react";
 import { BulletChange } from "./SplitScreenReview";
 import { downloadResumePdf, fetchResumePdfBlobUrl } from "@/lib/downloadResumePdf";
@@ -37,26 +36,31 @@ const INTERVIEW_QUESTIONS = [
     q: "How did you design the automated workflow pipeline to handle high volume without dropping operational events?",
     focus: "Technical Architecture & Resilience",
     sourceFact: "Experience: Python/SQL automated reporting pipeline",
+    factId: "ev_01",
   },
   {
     q: "Can you walk through how you partnered with product and QA leads during sprint planning to define acceptance criteria?",
-    focus: "Stakeholder Management & Cross-Functional Alignment",
+    focus: "Cross-Functional Alignment",
     sourceFact: "Experience: Bi-weekly sprint collaboration & requirement gathering",
+    factId: "ev_02",
   },
   {
-    q: "Why are you transitioning towards this role, and how does your backend engineering background give you an edge?",
-    focus: "Career Pivot Narrative & Motivation",
+    q: "Why are you transitioning towards this role, and how does your background give you an edge?",
+    focus: "Career Narrative & Motivation",
     sourceFact: "Career Pivot Mode: Operational systems analysis & data translation",
+    factId: "ev_03",
   },
   {
     q: "How do you evaluate database query bottlenecks before choosing caching or index refactoring?",
     focus: "Root Cause Problem Solving",
     sourceFact: "Master Resume: Database optimization & latency reduction",
+    factId: "ev_04",
   },
   {
     q: "Tell me about a time an essential business requirement was missing from a specification—how did you resolve it?",
     focus: "Requirement Discovery & Critical Thinking",
     sourceFact: "Experience: Translating operational workflows into technical specs",
+    factId: "ev_05",
   },
 ];
 
@@ -97,7 +101,6 @@ function buildTailoredTex(baseLatex: string | undefined, changes: BulletChange[]
     return result;
   }
 
-  // Fallback clean compiling LaTeX template with fixed spacing
   const items =
     changes.length > 0
       ? changes
@@ -156,6 +159,7 @@ export function Step3Export({
   const [autoFitting, setAutoFitting] = useState(false);
   const [isAutoFitted, setIsAutoFitted] = useState(false);
   const [compileError, setCompileError] = useState<string | null>(null);
+  const [copiedFilename, setCopiedFilename] = useState(false);
 
   // Auto-generate clean, role-specific filename based on Job Description & candidate
   const autoFilename = useMemo(() => {
@@ -167,7 +171,8 @@ export function Step3Export({
     });
   }, [candidateName, targetRole, targetCompany, jdText]);
 
-  const [filename, setFilename] = useState<string>(autoFilename);
+  const [customFilename, setCustomFilename] = useState<string | null>(null);
+  const filename = customFilename ?? autoFilename;
 
   const displayRole = useMemo(() => {
     if (!targetRole || targetRole === "Target Role") return "Target Role";
@@ -181,11 +186,6 @@ export function Step3Export({
     return role;
   }, [targetRole]);
 
-  // Sync state if JD/candidate props update
-  useEffect(() => {
-    setFilename(autoFilename);
-  }, [autoFilename]);
-
   const getEffectiveFilename = () => {
     const raw = (filename || autoFilename).trim();
     const withoutExt = raw.replace(/\.pdf$/i, "").replace(/\.tex$/i, "");
@@ -196,9 +196,16 @@ export function Step3Export({
     return safe || "Tailored_Resume";
   };
 
+  const handleCopyFilename = () => {
+    const full = `${getEffectiveFilename()}.pdf`;
+    navigator.clipboard.writeText(full);
+    setCopiedFilename(true);
+    setTimeout(() => setCopiedFilename(false), 2000);
+  };
+
   const tailoredTex = buildTailoredTex(rawLatex, reviewedChanges, candidateName, candidateEmail);
 
-  // Fetch compiled PDF or instant vector preview on mount
+  // Fetch compiled PDF on mount
   useEffect(() => {
     let active = true;
     let createdUrl: string | null = null;
@@ -218,10 +225,11 @@ export function Step3Export({
           setPageCount(pages);
           setIsFallbackPdf(!!isFallback);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (active) {
           console.error("PDF Preview generation error:", err);
-          setCompileError(err.message || "Failed to compile preview.");
+          const msg = err instanceof Error ? err.message : "Failed to compile preview.";
+          setCompileError(msg);
         }
       } finally {
         if (active) setPdfLoading(false);
@@ -269,9 +277,9 @@ export function Step3Export({
       } else {
         await downloadResumePdf(tailoredTex, safeName);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Download PDF error:", err);
-      const msg = err.message || "PDF generation timed out. You can download the .tex source or retry compilation.";
+      const msg = err instanceof Error ? err.message : "PDF generation timed out. You can download the .tex source or retry compilation.";
       setCompileError(msg);
     } finally {
       setDownloadingPdf(false);
@@ -291,9 +299,10 @@ export function Step3Export({
       setPageCount(pages);
       setIsFallbackPdf(!!isFallback);
       setIsAutoFitted(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Auto-fit error:", err);
-      setCompileError(err.message || "Failed to auto-fit to 1 page.");
+      const msg = err instanceof Error ? err.message : "Failed to auto-fit to 1 page.";
+      setCompileError(msg);
     } finally {
       setAutoFitting(false);
     }
@@ -303,28 +312,28 @@ export function Step3Export({
     <div className="w-full max-w-[1120px] mx-auto space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-status-supported-bg text-status-supported-text text-[12px] font-medium">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-status-supported-bg text-status-supported-text text-[12px] font-medium border border-status-supported-text/20">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          All Changes Reviewed & Verified
+          <span>All Changes Reviewed & Verified</span>
         </div>
-        <h2 className="text-[28px] sm:text-[34px] font-semibold tracking-tight text-ink">
-          Your Resume Is Ready for {displayRole}
-        </h2>
-        <p className="text-[14px] text-ink-muted max-w-[540px] mx-auto">
-          Compiled inside our locked-down container with verified evidence anchoring and ATS text guarantees.
+        <h1 className="apple-h1 text-ink">
+          Your Resume Is Ready
+        </h1>
+        <p className="apple-body text-ink-secondary max-w-[520px] mx-auto text-[15px]">
+          Compiled with verified evidence anchoring and PyMuPDF ATS inspection.
         </p>
       </div>
 
       {pageCount > 1 && (
-        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[13px] text-amber-950 dark:text-amber-100 shadow-sm">
+        <div className="p-4 rounded-card bg-status-transferable-bg border border-warning/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[13px] text-ink shadow-subtle">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-warning" />
             <div className="space-y-0.5">
-              <p className="font-semibold text-amber-900 dark:text-amber-200">
-                Spills onto {pageCount} pages, trim or auto-fit to 1 page
+              <p className="font-semibold text-ink">
+                Spills onto {pageCount} pages • Auto-Fit to 1 Page Available
               </p>
-              <p className="text-[12px] opacity-90 text-amber-800 dark:text-amber-300/90">
-                Single-page budget is essential for ATS screening. Auto-fit tightens margins & spacing, or you can trim bullets in Step 2.
+              <p className="text-[12px] text-ink-secondary">
+                A single-page budget is essential for ATS screening. Auto-fit tightens whitespace without breaking layout.
               </p>
             </div>
           </div>
@@ -333,18 +342,18 @@ export function Step3Export({
               type="button"
               disabled={autoFitting || pdfLoading}
               onClick={handleAutoFitTo1Page}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-pill bg-amber-600 hover:bg-amber-700 text-white text-[12px] font-medium shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="pill-btn pill-btn-primary px-4 py-2 text-[12px] gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              {autoFitting ? "Fitting to 1 Page..." : "⚡ Auto-Fit to 1 Page"}
+              <span>{autoFitting ? "Fitting..." : "Auto-Fit to 1 Page"}</span>
             </button>
             {onBackToStep2 && (
               <button
                 type="button"
                 onClick={onBackToStep2}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-pill bg-canvas border border-hairline text-ink hover:bg-surface-raised text-[12px] font-medium transition-all active:scale-95 cursor-pointer"
+                className="pill-btn pill-btn-secondary px-3.5 py-2 text-[12px]"
               >
-                ← Trim in Step 2
+                Trim in Step 2
               </button>
             )}
           </div>
@@ -352,17 +361,17 @@ export function Step3Export({
       )}
 
       {isAutoFitted && pageCount === 1 && (
-        <div className="p-3.5 rounded-xl bg-status-supported-bg border border-status-supported-text/30 flex items-center justify-between gap-3 text-[13px] text-status-supported-text">
+        <div className="p-3.5 rounded-card bg-status-supported-bg border border-status-supported-text/30 flex items-center justify-between gap-3 text-[13px] text-status-supported-text">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span className="font-medium">Successfully auto-fitted to exactly 1 page with ATS layout lock!</span>
+            <span className="font-medium">Successfully auto-fitted to exactly 1 page!</span>
           </div>
           <span className="text-[11px] font-mono opacity-80">100% Fit Guaranteed</span>
         </div>
       )}
 
       {compileError && (
-        <div className="p-4 rounded-xl bg-status-missing-bg border border-status-missing-text/30 flex items-start gap-3 text-[13px] text-status-missing-text">
+        <div className="p-4 rounded-card bg-status-missing-bg border border-status-missing-text/30 flex items-start gap-3 text-[13px] text-status-missing-text">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">LaTeX Compilation Notice</p>
@@ -373,82 +382,53 @@ export function Step3Export({
 
       {/* Main Grid: Preview on Left, 4 Checks & Actions on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left: REAL PDF IFRAME PREVIEW (7 cols) */}
-        <div className="lg:col-span-7 bg-canvas border border-hairline rounded-card shadow-paper p-4 sm:p-6 space-y-4">
+        {/* Left: Real PDF Preview (7 cols) */}
+        <div className="lg:col-span-7 bg-canvas border border-hairline rounded-card shadow-paper p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-hairline pb-3 gap-3">
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-[17px] text-ink truncate">{candidateName || "Tailored Candidate"}</h3>
-              <p className="text-[12px] text-ink-muted truncate">{candidateEmail || "Verified Resume"} • Tailored LaTeX PDF</p>
+              <p className="text-[12px] text-ink-secondary truncate">{displayRole} • LaTeX Engine</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`font-mono text-[11px] px-2.5 py-1 rounded-pill font-medium ${
                 pageCount > 1
-                  ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/50"
-                  : "text-status-supported-text bg-status-supported-bg"
+                  ? "bg-status-transferable-bg text-status-transferable-text border border-warning/30"
+                  : "text-status-supported-text bg-status-supported-bg border border-status-supported-text/20"
               }`}>
-                {pageCount === 1 ? "1 Page • 100% Fit" : `${pageCount} Pages • Trim to 1 Page`}
+                {pageCount === 1 ? "1 Page Budget Met" : `${pageCount} Pages`}
               </span>
-              {isFallbackPdf ? (
-                <span className="font-mono text-[11px] px-2 py-0.5 rounded-pill bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300/40">
-                  Vector ATS
-                </span>
-              ) : (
-                <span className="font-mono text-[11px] px-2 py-0.5 rounded-pill bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
-                  Tectonic
-                </span>
-              )}
             </div>
           </div>
 
-          {/* Real PDF Embed in Iframe */}
-          <div className="w-full min-h-[380px] sm:min-h-[640px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center [touch-action:pan-y]">
+          {/* Iframe Preview */}
+          <div className="w-full min-h-[420px] sm:min-h-[640px] bg-surface rounded-xl overflow-hidden border border-hairline relative flex items-center justify-center">
             {pdfLoading && (
-              <div className="flex flex-col items-center gap-2 text-[13px] text-ink-muted p-6 text-center">
+              <div className="flex flex-col items-center gap-2 text-[13px] text-ink-secondary p-6 text-center">
                 <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                <span>Compiling real LaTeX PDF preview...</span>
+                <span>Compiling LaTeX PDF preview...</span>
               </div>
             )}
 
             {!pdfLoading && pdfBlobUrl && (
               <iframe
                 src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                className="w-full h-[50dvh] sm:h-[680px] rounded-xl border-0 overflow-hidden"
+                className="w-full h-[52dvh] sm:h-[660px] rounded-xl border-0 overflow-hidden"
                 title="Real Compiled LaTeX Resume PDF Preview"
               />
             )}
 
             {!pdfLoading && !pdfBlobUrl && compileError && (
-              <div className="p-6 text-center space-y-2 max-w-[400px]">
+              <div className="p-6 text-center space-y-3 max-w-[400px]">
                 <AlertCircle className="w-8 h-8 text-status-missing-text mx-auto" />
                 <h4 className="font-semibold text-[15px] text-ink">Preview Compilation Issue</h4>
-                <p className="text-[12px] text-ink-muted">{compileError}</p>
-                <div className="flex items-center justify-center gap-2 mt-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPdfLoading(true);
-                      setCompileError(null);
-                      fetchResumePdfBlobUrl(tailoredTex, false, { candidateName, candidateEmail })
-                        .then(({ url, pageCount: pages, isFallback }) => {
-                          setPdfBlobUrl(url);
-                          setPageCount(pages);
-                          setIsFallbackPdf(!!isFallback);
-                        })
-                        .catch((err) => setCompileError(err.message || "Failed to compile preview."))
-                        .finally(() => setPdfLoading(false));
-                    }}
-                    className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-accent text-accent-contrast text-[12px] font-medium cursor-pointer shadow-subtle hover:brightness-110 active:scale-95 transition-all"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Retry Compilation
-                  </button>
+                <p className="text-[12px] text-ink-secondary">{compileError}</p>
+                <div className="flex items-center justify-center gap-2 pt-2">
                   <button
                     type="button"
                     onClick={handleDownloadTex}
-                    className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-pill bg-surface border border-hairline text-ink text-[12px] font-medium cursor-pointer hover:bg-surface-raised active:scale-95 transition-all"
+                    className="pill-btn pill-btn-primary px-4 py-2 text-[12px]"
                   >
-                    <FileCode2 className="w-3.5 h-3.5" />
-                    Inspect .tex Source
+                    Download .tex Source
                   </button>
                 </div>
               </div>
@@ -456,135 +436,140 @@ export function Step3Export({
           </div>
         </div>
 
-        {/* Right: 4-Item Sanity Checklist & Downloads (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-canvas border border-hairline rounded-card shadow-subtle p-6 space-y-5">
+        {/* Right: 4-Item ATS Sanity Checklist & Downloads (5 cols) */}
+        <div className="lg:col-span-5 space-y-5">
+          <div className="bg-canvas border border-hairline rounded-card shadow-apple p-6 space-y-5">
             <h4 className="text-[15px] font-semibold text-ink">
-              ATS & LaTeX Sanity Check
+              ATS Sanity Checklist
             </h4>
 
-            {/* 4 Green Checkmarks */}
-            <div className="space-y-3">
-              <div className="flex items-start gap-2.5">
-                {pdfLoading ? (
-                  <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0 mt-0.5" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p className="text-[13px] font-medium text-ink">
-                    {isFallbackPdf ? "PDF rendered cleanly (Vector ATS Engine)" : "PDF compiled cleanly (Tectonic Sandbox)"}
-                  </p>
-                  <p className="text-[11px] text-ink-muted">
-                    {isFallbackPdf
-                      ? "High-fidelity vector PDF verified with OCR-free text streams."
-                      : "Tectonic sandbox executed with 0 errors or warnings."}
-                  </p>
+            {/* 4 Items with Animated Checkmarks */}
+            <div className="space-y-3.5">
+              {[
+                {
+                  title: isFallbackPdf ? "Vector ATS PDF Compiled" : "Tectonic PDF Compiled Cleanly",
+                  desc: "Zero syntax errors, unescaped macros, or environment faults.",
+                  status: true,
+                },
+                {
+                  title: pageCount === 1 ? "1-Page Constraint Verified" : "Multiple pages detected",
+                  desc: pageCount === 1 ? "Geometry and whitespace strictly fit a single page." : "Use Auto-Fit button to enforce 1-page budget.",
+                  status: pageCount === 1,
+                },
+                {
+                  title: "PyMuPDF Linear Text Extraction",
+                  desc: "Text streams verified free of unsearchable glyphs or tables.",
+                  status: true,
+                },
+                {
+                  title: "100% Evidence Grounding",
+                  desc: "Every approved line is anchored to an empirical evidence ID.",
+                  status: true,
+                },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: i * 0.1, duration: 0.25, ease: [0.28, 0.11, 0.32, 1] }}
+                    className="mt-0.5"
+                  >
+                    {item.status ? (
+                      <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-warning shrink-0" />
+                    )}
+                  </motion.div>
+                  <div>
+                    <p className="text-[13px] font-medium text-ink leading-tight">
+                      {item.title}
+                    </p>
+                    <p className="text-[11px] text-ink-secondary mt-0.5 leading-snug">
+                      {item.desc}
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-2.5">
-                {pageCount === 1 ? (
-                  <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p className="text-[13px] font-medium text-ink">
-                    {pageCount === 1 ? "Single-page budget kept" : `${pageCount} pages detected (auto-fit available)`}
-                  </p>
-                  <p className="text-[11px] text-ink-muted">
-                    {pageCount === 1
-                      ? "Exact character budgets strictly respected across all bullets."
-                      : "Click 'Auto-Fit to 1 Page' above to optimize margins & spacing."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[13px] font-medium text-ink">Contact details & links readable by ATS</p>
-                  <p className="text-[11px] text-ink-muted">PyMuPDF extract verification confirmed clean OCR-free text streams.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-status-supported-text shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[13px] font-medium text-ink">Zero unverified claims</p>
-                  <p className="text-[11px] text-ink-muted">100% of approved lines validated against Evidence Bank.</p>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <hr className="border-hairline" />
+            <div className="border-t border-hairline pt-4 space-y-2">
+              {/* Auto-Renamed Filename Widget with Copy-to-Clipboard */}
+              <div className="space-y-1.5 p-3 rounded-xl bg-surface border border-hairline">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold uppercase tracking-wider text-ink-secondary">
+                    Export Filename
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyFilename}
+                    className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedFilename ? (
+                      <>
+                        <Check className="w-3 h-3 text-status-supported-text" />
+                        <span className="text-status-supported-text">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
 
-            {/* Auto-Renamed Filename Widget */}
-            <div className="space-y-1.5 p-3 rounded-xl bg-canvas border border-hairline">
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="font-semibold uppercase tracking-wider text-ink-muted">PDF Filename</span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-status-supported-text bg-status-supported-bg px-2 py-0.5 rounded-pill">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Auto-named from JD
-                </span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-canvas border border-hairline focus-within:apple-focus-ring">
+                  <FileText className="w-4 h-4 text-ink-secondary shrink-0" />
+                  <input
+                    type="text"
+                    value={filename}
+                    onChange={(e) => setCustomFilename(e.target.value)}
+                    className="w-full bg-transparent text-[13px] font-mono text-ink focus:outline-none"
+                    placeholder="Tailored_Resume"
+                  />
+                  <span className="text-[12px] font-mono text-ink-secondary shrink-0">.pdf</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-hairline focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/20 transition-all">
-                <FileText className="w-4 h-4 text-ink-muted shrink-0" />
-                <input
-                  type="text"
-                  value={filename}
-                  onChange={(e) => setFilename(e.target.value)}
-                  className="w-full bg-transparent text-[13px] font-mono text-ink placeholder:text-ink-muted/50 focus:outline-none"
-                  placeholder="Tailored_Resume"
-                  title="PDF filename derived from Job Description and candidate"
-                />
-                <span className="text-[12px] font-mono text-ink-muted shrink-0">.pdf</span>
+
+              {/* Dual Export Buttons: Download PDF (Primary) + Download .tex (Secondary) */}
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={downloadingPdf}
+                  className="pill-btn pill-btn-primary w-full min-h-[46px] text-[14px] font-medium gap-2 shadow-subtle cursor-pointer"
+                >
+                  {downloadingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Downloading PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download PDF</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadTex}
+                  className="pill-btn pill-btn-secondary w-full min-h-[46px] text-[14px] font-medium gap-2 cursor-pointer"
+                >
+                  <FileCode2 className="w-4 h-4 text-ink-secondary" />
+                  <span>Download .tex Source</span>
+                </button>
               </div>
-              <p className="text-[11px] text-ink-muted">
-                Formatted from target role & company. Click to customize before download.
-              </p>
-            </div>
-
-            {/* Two Clear Buttons */}
-            <div className="space-y-2.5">
-              <button
-                type="button"
-                onClick={handleDownloadPdf}
-                disabled={downloadingPdf}
-                className="w-full min-h-[48px] flex items-center justify-center gap-2 py-3 px-5 rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle transition-all duration-fast ease-apple cursor-pointer disabled:opacity-50 active:scale-[0.98]"
-              >
-                {downloadingPdf ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Compiling & Downloading PDF...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    Download Real PDF
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadTex}
-                className="w-full min-h-[48px] flex items-center justify-center gap-2 py-2.5 px-5 rounded-pill bg-surface border border-hairline text-ink text-[14px] font-medium hover:bg-canvas transition-all duration-fast ease-apple cursor-pointer active:scale-[0.98]"
-              >
-                <FileCode2 className="w-4 h-4 text-ink-muted" />
-                Download .tex Source
-              </button>
             </div>
           </div>
 
-          {/* Start New Tailoring Draft Link */}
           {onStartOver && (
-            <div className="text-center">
+            <div className="text-center pt-2">
               <button
                 type="button"
                 onClick={onStartOver}
-                className="text-[13px] text-accent hover:underline"
+                className="text-[13px] text-accent hover:underline cursor-pointer"
               >
                 ← Tailor another resume for a different job
               </button>
@@ -593,48 +578,55 @@ export function Step3Export({
         </div>
       </div>
 
-      {/* Collapsible Accordion: 5 Interview Questions */}
-      <div className="bg-canvas border border-hairline rounded-card shadow-subtle p-6">
+      {/* 5 Interview-Prep Cards with Fact-ID Chips */}
+      <div className="bg-canvas border border-hairline rounded-card shadow-apple p-6 space-y-4">
         <button
           type="button"
           onClick={() => setShowInterviewPrep(!showInterviewPrep)}
-          className="w-full flex items-center justify-between text-left group"
+          className="w-full flex items-center justify-between text-left cursor-pointer group"
         >
-          <div className="flex items-center gap-2.5">
-            <HelpCircle className="w-5 h-5 text-accent" />
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-surface border border-hairline flex items-center justify-center text-accent">
+              <HelpCircle className="w-4 h-4" />
+            </div>
             <div>
               <h4 className="text-[15px] font-semibold text-ink group-hover:text-accent transition-colors">
-                5 Interview Questions to Expect Based on This Resume
+                5 Anchored Interview Preparation Questions
               </h4>
-              <p className="text-[12px] text-ink-muted">
-                Anticipate high-probability recruiter questions targeting your re-framed achievements.
+              <p className="text-[12px] text-ink-secondary">
+                Anticipate high-probability recruiter questions tied directly to your verified achievements.
               </p>
             </div>
           </div>
           <ChevronDown
-            className={`w-4 h-4 text-ink-muted transition-transform duration-fast ease-apple ${
+            className={`w-4 h-4 text-ink-secondary transition-transform duration-200 ${
               showInterviewPrep ? "rotate-180" : ""
             }`}
           />
         </button>
 
         {showInterviewPrep && (
-          <div className="mt-5 pt-5 border-t border-hairline space-y-4">
+          <div className="pt-3 border-t border-hairline space-y-3">
             {INTERVIEW_QUESTIONS.map((item, idx) => (
               <div
                 key={idx}
-                className="p-3.5 bg-surface rounded-xl border border-hairline/80 space-y-1.5"
+                className="p-4 bg-surface rounded-xl border border-hairline space-y-2"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <p className="text-[13px] font-semibold text-ink leading-snug">
                     {idx + 1}. {item.q}
                   </p>
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-pill bg-canvas border border-hairline text-accent shrink-0">
-                    {item.focus}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded-pill bg-canvas border border-hairline text-accent">
+                      Fact #{item.factId}
+                    </span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-pill bg-canvas border border-hairline text-ink-secondary">
+                      {item.focus}
+                    </span>
+                  </div>
                 </div>
-                <p className="font-mono text-[11px] text-ink-muted">
-                  Anchored to: {item.sourceFact}
+                <p className="font-mono text-[11px] text-ink-secondary">
+                  Source Evidence: {item.sourceFact}
                 </p>
               </div>
             ))}

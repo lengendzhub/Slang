@@ -3,9 +3,10 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { FrostedNav } from "@/components/ui/FrostedNav";
+import { Footer } from "@/components/landing/Footer";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 
-export default function GlobalError({
+export default function ErrorBoundary({
   error,
   reset,
 }: {
@@ -13,37 +14,33 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log sanitized error internally without exposing to user UI
-    console.error("Uncaught application error:", error?.message);
+    console.error("Runtime error caught in error.tsx:", error?.message);
   }, [error]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-canvas text-ink selection:bg-accent selection:text-white">
+    <div className="min-h-screen flex flex-col bg-surface text-ink selection:bg-accent selection:text-white">
       <FrostedNav />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
-        <div className="max-w-[480px] mx-auto space-y-6">
-          <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 mx-auto flex items-center justify-center">
-            <AlertTriangle className="w-7 h-7" />
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-20 text-center">
+        <div className="max-w-[460px] mx-auto space-y-6">
+          <div className="w-12 h-12 rounded-full bg-status-missing-bg border border-danger/20 text-danger mx-auto flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-[12px] font-semibold uppercase tracking-wider text-accent block">
-              Application Error
-            </span>
-            <h1 className="text-[28px] sm:text-[34px] font-semibold tracking-tight text-ink">
+            <h1 className="apple-h1 text-ink">
               Something went wrong.
             </h1>
-            <p className="text-[14px] text-ink-muted leading-relaxed">
-              An unexpected issue occurred while rendering this page. Your data in session storage has been preserved.
+            <p className="apple-body text-ink-secondary text-[15px]">
+              An unexpected error occurred while rendering this view. Your session data remains preserved.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => reset()}
-              className="min-h-[44px] px-6 py-2.5 rounded-pill bg-accent text-white text-[14px] font-medium hover:bg-accent-hover shadow-subtle inline-flex items-center gap-2 transition-all duration-fast ease-apple active:scale-[0.98] cursor-pointer"
+              className="pill-btn pill-btn-primary px-6 py-2.5 text-[14px] font-medium gap-2 min-h-[44px]"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Try Again</span>
@@ -51,14 +48,16 @@ export default function GlobalError({
 
             <Link
               href="/workspace"
-              className="min-h-[44px] px-6 py-2.5 rounded-pill bg-surface border border-hairline text-ink text-[14px] font-medium hover:bg-canvas transition-colors inline-flex items-center gap-2 active:scale-[0.98]"
+              className="pill-btn pill-btn-secondary px-6 py-2.5 text-[14px] font-medium min-h-[44px]"
             >
-              <Home className="w-4 h-4 text-ink-muted" />
+              <Home className="w-4 h-4 text-ink-secondary mr-1.5" />
               <span>Return to Workspace</span>
             </Link>
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

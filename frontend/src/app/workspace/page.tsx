@@ -13,6 +13,7 @@ import { EvidenceModal } from "@/components/workspace/EvidenceModal";
 import { DraftAligningModal, ModalStatus } from "@/components/workspace/DraftAligningModal";
 import Link from "next/link";
 import { ChevronRight, Check, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   loadUserSession,
   saveUserSession,
@@ -483,81 +484,85 @@ export default function WorkspacePage() {
             </div>
           </div>
 
-          {/* Centered Desktop 3-Step Progress Indicator (md and up) */}
+          {/* Centered Desktop 3-Step Progress Indicator (Apple Store Checkout Style) */}
           <nav
             aria-label="Workspace progress"
-            className="hidden md:flex items-center gap-2 text-[13px]"
+            className="hidden md:flex items-center gap-3 text-[13px]"
           >
-            {/* Step 1 */}
+            {/* Step 1: Tailor */}
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
               className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
                 currentStep === 1
-                  ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
-                  : "text-ink-muted hover:text-ink"
+                  ? "font-semibold text-ink bg-surface px-3 py-1 rounded-pill border border-hairline shadow-subtle"
+                  : "text-ink-secondary hover:text-ink"
               }`}
             >
               {currentStep > 1 ? (
-                <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-semibold">
+                <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-bold">
                   ✓
                 </span>
               ) : (
-                <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
+                <span className="w-4 h-4 rounded-full bg-surface text-ink-secondary border border-hairline inline-flex items-center justify-center text-[10px] font-medium">
                   1
                 </span>
               )}
-              Resume & Job
+              <span>Tailor</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
+            <ChevronRight className="w-3.5 h-3.5 text-separator" />
 
-            {/* Step 2 */}
+            {/* Step 2: Review */}
             <button
               type="button"
               onClick={() => {
                 if (currentStep > 2) setCurrentStep(2);
               }}
-              className="flex items-center gap-1.5 transition-colors text-ink-muted hover:text-ink cursor-pointer"
+              className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
+                currentStep > 2
+                  ? "text-ink hover:text-accent"
+                  : "text-ink-secondary opacity-60 cursor-not-allowed"
+              }`}
             >
               {currentStep > 2 ? (
-                <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-semibold">
+                <span className="w-4 h-4 rounded-full bg-status-supported-bg text-status-supported-text inline-flex items-center justify-center text-[10px] font-bold">
                   ✓
                 </span>
               ) : (
-                <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
+                <span className="w-4 h-4 rounded-full bg-surface text-ink-secondary border border-hairline inline-flex items-center justify-center text-[10px] font-medium">
                   2
                 </span>
               )}
-              Review Changes
+              <span>Review</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-ink-muted" />
+            <ChevronRight className="w-3.5 h-3.5 text-separator" />
 
-            {/* Step 3 */}
+            {/* Step 3: Export */}
             <span
               className={`flex items-center gap-1.5 ${
                 currentStep === 3
-                  ? "font-medium text-ink bg-surface px-2.5 py-1 rounded-pill border border-hairline"
-                  : "text-ink-muted"
+                  ? "font-semibold text-ink bg-surface px-3 py-1 rounded-pill border border-hairline shadow-subtle"
+                  : "text-ink-secondary opacity-60"
               }`}
             >
-              <span className="w-4 h-4 rounded-full bg-surface text-ink-muted border border-hairline inline-flex items-center justify-center text-[10px]">
+              <span className="w-4 h-4 rounded-full bg-surface text-ink-secondary border border-hairline inline-flex items-center justify-center text-[10px] font-medium">
                 3
               </span>
-              Download
+              <span>Export</span>
             </span>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden sm:block text-[12px] text-ink-muted truncate max-w-[150px]">
+            <div className="hidden sm:block text-[12px] text-ink-secondary truncate max-w-[150px]">
               Target: <strong className="font-medium text-ink">{targetRole}</strong>
             </div>
             <button
               type="button"
               onClick={handleClearWorkspace}
               title="Clear all inputs and reset workspace"
-              className="text-[12px] text-ink-muted hover:text-red-500 flex items-center gap-1 transition-colors px-2.5 py-1.5 rounded-pill hover:bg-red-500/10 cursor-pointer min-h-[36px]"
+              className="text-[12px] text-ink-secondary hover:text-red-500 flex items-center gap-1 transition-colors px-2.5 py-1.5 rounded-pill hover:bg-red-500/10 cursor-pointer min-h-[36px]"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span className="hidden xs:inline">Clear Data</span>
@@ -567,7 +572,7 @@ export default function WorkspacePage() {
       )}
 
       {/* Main Workspace Area */}
-      <main className={`flex-1 w-full mx-auto ${currentStep === 2 ? "p-0" : "max-w-[1240px] px-4 sm:px-6 py-8 pb-28"}`}>
+      <main className={`flex-1 w-full mx-auto ${currentStep === 2 ? "p-0" : "max-w-[1280px] px-4 sm:px-6 py-6 pb-28"}`}>
         {/* Redesigned Engaging & Trustworthy Loading Modal */}
         <DraftAligningModal
           isOpen={isProcessing}
@@ -579,49 +584,73 @@ export default function WorkspacePage() {
           }}
           autoSimulate={true}
           totalDurationMs={7000}
-          title="Polishing your draft"
+          title="Aligning draft to target requirements"
         />
 
-        {/* STEP 1: Input */}
-        {currentStep === 1 && (
-          <Step1Input
-            onGenerateDraft={handleGenerateDraft}
-            onOpenEvidenceModal={handleOpenEvidenceModal}
-            candidateName={candidateName}
-            isProcessing={isProcessing}
-            hasExistingResume={Boolean(rawLatex && rawLatex.trim())}
-            initialJdText={jdText}
-          />
-        )}
+        {/* Animated Step Transitions */}
+        <AnimatePresence mode="wait">
+          {currentStep === 1 && (
+            <motion.div
+              key="step-1"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.28, 0.11, 0.32, 1] }}
+            >
+              <Step1Input
+                onGenerateDraft={handleGenerateDraft}
+                onOpenEvidenceModal={handleOpenEvidenceModal}
+                candidateName={candidateName}
+                isProcessing={isProcessing}
+                hasExistingResume={Boolean(rawLatex && rawLatex.trim())}
+                initialJdText={jdText}
+              />
+            </motion.div>
+          )}
 
-        {/* STEP 2: Split-Screen Review */}
-        {currentStep === 2 && (
-          <SplitScreenReview
-            initialChanges={diffs}
-            initialRequirements={requirements}
-            candidateName={candidateName}
-            candidateEmail={candidateEmail}
-            targetRole={targetRole}
-            rawLatex={rawLatex}
-            onContinueToDownload={handleContinueToDownload}
-            onBackToStep1={() => setCurrentStep(1)}
-          />
-        )}
+          {currentStep === 2 && (
+            <motion.div
+              key="step-2"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.28, 0.11, 0.32, 1] }}
+            >
+              <SplitScreenReview
+                initialChanges={diffs}
+                initialRequirements={requirements}
+                candidateName={candidateName}
+                candidateEmail={candidateEmail}
+                targetRole={targetRole}
+                rawLatex={rawLatex}
+                onContinueToDownload={handleContinueToDownload}
+                onBackToStep1={() => setCurrentStep(1)}
+              />
+            </motion.div>
+          )}
 
-        {/* STEP 3: Export & ATS Sanity Check */}
-        {currentStep === 3 && (
-          <Step3Export
-            candidateName={candidateName}
-            candidateEmail={candidateEmail}
-            targetRole={targetRole}
-            targetCompany={targetCompany}
-            reviewedChanges={diffs}
-            rawLatex={rawLatex}
-            jdText={jdText}
-            onStartOver={handleStartOver}
-            onBackToStep2={() => setCurrentStep(2)}
-          />
-        )}
+          {currentStep === 3 && (
+            <motion.div
+              key="step-3"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: [0.28, 0.11, 0.32, 1] }}
+            >
+              <Step3Export
+                candidateName={candidateName}
+                candidateEmail={candidateEmail}
+                targetRole={targetRole}
+                targetCompany={targetCompany}
+                reviewedChanges={diffs}
+                rawLatex={rawLatex}
+                jdText={jdText}
+                onStartOver={handleStartOver}
+                onBackToStep2={() => setCurrentStep(2)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Add Fact to Evidence Bank Modal */}

@@ -3,9 +3,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Menu, X, ArrowRight, ShieldCheck, User as UserIcon, LogOut } from "lucide-react";
+import { Moon, Sun, Menu, X, ArrowRight, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCurrentUser, clearAuthSession, AuthUser } from "@/lib/authStore";
+
+const NAV_LINKS = [
+  { label: "Workspace", href: "/workspace" },
+  { label: "Library", href: "/library" },
+  { label: "Siblings", href: "/siblings" },
+  { label: "Evidence", href: "/evidence" },
+  { label: "Account", href: "/account" },
+];
 
 export function FrostedNav() {
   const [isDark, setIsDark] = useState(false);
@@ -111,14 +119,22 @@ export function FrostedNav() {
 
   return (
     <>
+      {/* Skip to Content accessible link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:text-[13px] focus:font-medium focus:rounded-pill focus:shadow-apple focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to main content
+      </a>
+
       <header
-        className={`sticky top-0 z-40 h-12 md:h-[48px] frosted-glass px-4 sm:px-6 flex items-center justify-between transition-all duration-200 ${
+        className={`sticky top-0 z-40 h-11 md:h-12 frosted-glass px-4 sm:px-6 flex items-center justify-between transition-all duration-200 ${
           scrolled ? "border-b border-hairline shadow-subtle" : "border-b border-transparent"
         }`}
       >
         {/* Brand Wordmark & Mobile Menu Trigger */}
         <div className="flex items-center gap-3">
-          {/* Below md: Hamburger Button (at least 44x44px touch target) */}
+          {/* Below md: Hamburger Button (44x44px touch target) */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -130,7 +146,7 @@ export function FrostedNav() {
           </button>
 
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-6 h-6 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-0.5 shadow-sm group-hover:border-accent/50 transition-colors overflow-hidden">
+            <div className="w-6 h-6 rounded-md bg-neutral-900 border border-neutral-800 flex items-center justify-center p-0.5 shadow-sm group-hover:border-accent/50 transition-colors overflow-hidden">
               <img src="/icon.svg" alt="Slang logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-semibold text-[17px] tracking-tight text-ink group-hover:text-accent transition-colors">
@@ -139,41 +155,31 @@ export function FrostedNav() {
           </Link>
         </div>
 
-        {/* Desktop Navigation Links (md and up) */}
-        <nav className="hidden md:flex items-center gap-8 text-[13px] font-normal text-ink-muted">
-          <Link
-            href="/workspace"
-            className={`hover:text-ink transition-colors duration-fast ease-apple ${
-              pathname === "/workspace" ? "text-ink font-medium" : ""
-            }`}
-          >
-            The Workspace
-          </Link>
-          <Link
-            href="/library"
-            className={`hover:text-ink transition-colors duration-fast ease-apple ${
-              pathname === "/library" ? "text-ink font-medium" : ""
-            }`}
-          >
-            My Library
-          </Link>
-          <Link
-            href="/account"
-            className={`hover:text-ink transition-colors duration-fast ease-apple ${
-              pathname === "/account" ? "text-ink font-medium" : ""
-            }`}
-          >
-            Account & Privacy
-          </Link>
+        {/* Desktop Navigation Links (exact 5 links: Workspace, Library, Siblings, Evidence, Account) */}
+        <nav className="hidden md:flex items-center gap-7 text-[13px] font-normal text-ink-secondary" aria-label="Main Navigation">
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`transition-colors duration-200 hover:text-ink ${
+                  isActive ? "text-ink font-medium" : ""
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Actions: Theme Toggle + Blue Pill CTA */}
+        {/* Actions: Theme Toggle + Auth/CTA */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={toggleTheme}
             aria-label="Toggle dark mode"
-            className="w-11 h-11 sm:w-8 sm:h-8 rounded-full inline-flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface active:scale-95 transition-all cursor-pointer"
+            className="w-9 h-9 rounded-full inline-flex items-center justify-center text-ink-secondary hover:text-ink hover:bg-surface active:scale-95 transition-all cursor-pointer"
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
@@ -183,7 +189,7 @@ export function FrostedNav() {
               href="/account"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-surface border border-hairline text-[12px] font-medium text-ink hover:bg-canvas transition-colors shadow-subtle min-h-[34px]"
             >
-              <div className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">
+              <div className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-semibold">
                 {user.name ? user.name[0].toUpperCase() : "U"}
               </div>
               <span className="truncate max-w-[90px]">{user.name.split(" ")[0]}</span>
@@ -191,7 +197,7 @@ export function FrostedNav() {
           ) : (
             <Link
               href="/signin"
-              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-pill text-[13px] font-medium text-ink hover:text-accent transition-colors min-h-[36px]"
+              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-pill text-[13px] font-medium text-ink hover:text-accent transition-colors min-h-[34px]"
             >
               Sign In
             </Link>
@@ -200,14 +206,14 @@ export function FrostedNav() {
           <Link
             href="/workspace"
             onClick={handleTailorClick}
-            className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle min-h-[36px] transition-all duration-fast ease-apple active:scale-[0.98]"
+            className="hidden sm:inline-flex items-center px-3.5 py-1.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle min-h-[34px] transition-all duration-200 active:scale-[0.98]"
           >
             Tailor Your Resume
           </Link>
         </div>
       </header>
 
-      {/* Full-Screen Mobile Glass Sheet (Below md) */}
+      {/* Full-Screen Staggered Mobile Menu (Below md) */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -225,72 +231,54 @@ export function FrostedNav() {
               paddingBottom: "calc(var(--sab, 0px) + 2rem)",
             }}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.3, delay: 0.05, ease: [0.28, 0.11, 0.32, 1] }}
-              className="space-y-6"
-            >
-              <div className="border-b border-hairline pb-4 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+            <div className="space-y-6">
+              <div className="border-b border-hairline pb-3 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">
                   Navigation
                 </span>
               </div>
 
-              <nav className="flex flex-col space-y-4">
-                <Link
-                  href="/"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
-                >
-                  <span>Home</span>
-                  <ArrowRight className="w-5 h-5 text-ink-muted" />
-                </Link>
-                <Link
-                  href="/workspace"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
-                >
-                  <span>The Workspace</span>
-                  <ArrowRight className="w-5 h-5 text-ink-muted" />
-                </Link>
-                <Link
-                  href="/library"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
-                >
-                  <span>My Library</span>
-                  <ArrowRight className="w-5 h-5 text-ink-muted" />
-                </Link>
-                <Link
-                  href="/account"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
-                >
-                  <span>Account & Privacy</span>
-                  <ArrowRight className="w-5 h-5 text-ink-muted" />
-                </Link>
+              <nav className="flex flex-col space-y-2">
+                {NAV_LINKS.map((link, idx) => (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: idx * 0.05,
+                      ease: [0.28, 0.11, 0.32, 1],
+                    }}
+                  >
+                    <Link
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-between py-2 text-[20px] font-semibold text-ink hover:text-accent transition-colors"
+                    >
+                      <span>{link.label}</span>
+                      <ArrowRight className="w-4 h-4 text-ink-secondary" />
+                    </Link>
+                  </motion.div>
+                ))}
               </nav>
-            </motion.div>
+            </div>
 
             {/* Bottom Actions inside Sheet */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.3, delay: 0.1, ease: [0.28, 0.11, 0.32, 1] }}
+              transition={{ duration: 0.3, delay: 0.25, ease: [0.28, 0.11, 0.32, 1] }}
               className="pt-6 border-t border-hairline space-y-3"
             >
               {user ? (
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-hairline">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-[13px]">
+                    <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center font-semibold text-[13px]">
                       {user.name ? user.name[0].toUpperCase() : "U"}
                     </div>
                     <div>
                       <p className="text-[13px] font-semibold text-ink leading-tight">{user.name}</p>
-                      <p className="text-[11px] text-ink-muted">{user.email}</p>
+                      <p className="text-[11px] text-ink-secondary">{user.email}</p>
                     </div>
                   </div>
                   <button
@@ -299,8 +287,9 @@ export function FrostedNav() {
                       clearAuthSession();
                       setMobileMenuOpen(false);
                     }}
-                    className="p-1.5 text-ink-muted hover:text-red-500 rounded cursor-pointer"
+                    className="p-2 text-ink-secondary hover:text-red-500 rounded cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
                     title="Sign Out"
+                    aria-label="Sign Out"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -310,14 +299,14 @@ export function FrostedNav() {
                   <Link
                     href="/signin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full min-h-[42px] rounded-pill bg-canvas border border-hairline text-ink text-[14px] font-medium inline-flex items-center justify-center hover:bg-surface transition-colors"
+                    className="w-full min-h-[44px] rounded-pill bg-canvas border border-hairline text-ink text-[14px] font-medium inline-flex items-center justify-center hover:bg-surface transition-colors"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/signup"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full min-h-[42px] rounded-pill bg-surface border border-hairline text-accent text-[14px] font-medium inline-flex items-center justify-center hover:bg-canvas transition-colors"
+                    className="w-full min-h-[44px] rounded-pill bg-surface border border-hairline text-accent text-[14px] font-medium inline-flex items-center justify-center hover:bg-canvas transition-colors"
                   >
                     Create Account
                   </Link>
@@ -326,12 +315,12 @@ export function FrostedNav() {
               <Link
                 href="/workspace"
                 onClick={handleTailorClick}
-                className="w-full min-h-[48px] rounded-pill bg-accent text-white text-[16px] font-medium inline-flex items-center justify-center gap-2 shadow-subtle hover:bg-accent-hover transition-colors"
+                className="w-full min-h-[48px] rounded-pill bg-accent text-white text-[15px] font-medium inline-flex items-center justify-center gap-2 shadow-subtle hover:bg-accent-hover transition-colors"
               >
                 <span>Tailor Your Resume</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <p className="text-center text-[12px] text-ink-muted">
+              <p className="text-center text-[12px] text-ink-secondary">
                 Zero hallucinations • Preamble & macros 100% locked
               </p>
             </motion.div>
@@ -341,4 +330,3 @@ export function FrostedNav() {
     </>
   );
 }
-

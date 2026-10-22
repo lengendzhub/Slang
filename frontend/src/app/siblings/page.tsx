@@ -8,14 +8,10 @@ import {
   GitBranch,
   FileText,
   AlertCircle,
-  Clock,
   ArrowRight,
   Plus,
   RefreshCw,
   Trash2,
-  Download,
-  ExternalLink,
-  UploadCloud,
 } from "lucide-react";
 
 export default function SiblingsPage() {
@@ -34,10 +30,8 @@ export default function SiblingsPage() {
     };
     sync();
     window.addEventListener("slang_session_updated", sync);
-    window.addEventListener("tailorai_session_updated", sync);
     return () => {
       window.removeEventListener("slang_session_updated", sync);
-      window.removeEventListener("tailorai_session_updated", sync);
     };
   }, []);
 
@@ -56,161 +50,151 @@ export default function SiblingsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--ink)]">
+    <div className="min-h-screen flex flex-col bg-surface text-ink selection:bg-accent selection:text-white">
       <FrostedNav />
 
-      <main className="flex-1 max-w-[1200px] w-full mx-auto px-6 py-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 mb-8 border-b border-[var(--line-light)]">
+      <main className="flex-1 max-w-[980px] w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-28 space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-hairline">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--blue)]">
-                Sibling Management
-              </span>
-              <span className="text-[11px] text-[var(--ink-2)]">•</span>
-              <span className="text-[12px] text-[var(--ink-2)]">Never Overwrites Silently</span>
-            </div>
-            <h1 className="text-[28px] md:text-[34px] font-semibold tracking-tight text-[var(--ink)]">
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-accent mb-1 block">
+              Resume Siblings
+            </span>
+            <h1 className="apple-h1 text-ink">
               Resume Siblings Tree ({siblings.length})
             </h1>
-            <p className="text-[14px] text-[var(--ink-2)]">
-              Track all job-tailored children created from your single master resume.
+            <p className="apple-body text-ink-secondary mt-1">
+              Track all job-tailored documents derived from your single master LaTeX resume.
             </p>
           </div>
 
           <Link
-            href="/studio"
-            className="pill-btn pill-btn-primary px-5 py-2 text-[14px] shadow-sm flex items-center gap-1.5"
+            href="/workspace"
+            className="pill-btn pill-btn-primary px-4 py-2 text-[13px] gap-1.5"
           >
             <Plus className="w-4 h-4" />
-            Tailor New Sibling
+            <span>Tailor New Sibling</span>
           </Link>
         </div>
 
-        {/* Master Anchor Card */}
-        <div className="apple-card p-6 border-l-4 border-l-[var(--blue)] mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        {/* Master Anchor Status Card */}
+        <div className="apple-card p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-[var(--blue)]/10 text-[var(--blue)] flex items-center justify-center font-bold">
-              <FileText className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-canvas border border-hairline flex items-center justify-center text-accent shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-[17px] text-[var(--ink)]">
+                <span className="font-semibold text-[16px] text-ink">
                   {masterName}
                 </span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)]">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text border border-status-supported-text/20">
                   Active Master
                 </span>
               </div>
-              <p className="text-[13px] text-[var(--ink-2)] mt-0.5">
-                {evidenceCount > 0 ? `${evidenceCount} verified Evidence Bank records` : "No master resume uploaded yet"}
+              <p className="text-[12px] text-ink-secondary mt-0.5">
+                {evidenceCount > 0 ? `${evidenceCount} verified Evidence Bank records anchored` : "No master resume uploaded yet"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-[13px]">
-            <Link
-              href="/evidence"
-              className="pill-btn px-4 py-1.5 border border-[var(--line-light)] bg-[var(--bg)] text-[var(--ink)] hover:bg-[var(--bg-alt)]"
-            >
-              Inspect Evidence Bank
-            </Link>
-          </div>
+          <Link
+            href="/evidence"
+            className="pill-btn pill-btn-secondary px-4 py-1.5 text-[12px]"
+          >
+            Inspect Evidence Bank
+          </Link>
         </div>
 
-        {/* Empty State */}
+        {/* Empty State: Calm illustration-free layout, one headline, one sentence, one primary action */}
         {isLoaded && siblings.length === 0 ? (
-          <div className="apple-card p-12 text-center max-w-[600px] mx-auto my-12">
-            <div className="w-16 h-16 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] flex items-center justify-center mx-auto mb-4">
-              <GitBranch className="w-8 h-8" />
-            </div>
-            <h3 className="text-[20px] font-semibold text-[var(--ink)] mb-2">
-              No sibling resumes created yet
+          <div className="apple-card p-12 text-center max-w-[540px] mx-auto my-12 space-y-4">
+            <h3 className="apple-h2 text-ink">
+              No Resume Siblings Found
             </h3>
-            <p className="text-[14px] text-[var(--ink-2)] mb-6 max-w-[420px] mx-auto leading-relaxed">
+            <p className="apple-body text-ink-secondary text-[14px]">
               When you tailor resumes for specific job descriptions, each approved version is saved as a tracked sibling linked to your master document.
             </p>
-            <Link
-              href="/workspace"
-              className="pill-btn pill-btn-primary px-7 py-2.5 text-[14px] inline-flex items-center gap-1.5"
-            >
-              Tailor First Resume Sibling
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="pt-2">
+              <Link
+                href="/workspace"
+                className="pill-btn pill-btn-primary px-6 py-2.5 text-[13px] inline-flex items-center gap-1.5"
+              >
+                <span>Tailor First Sibling in Workspace</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
         ) : (
           /* Siblings Grid */
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {siblings.map((sib) => (
-              <div key={sib.id} className="apple-card p-6 flex flex-col justify-between">
+              <div key={sib.id} className="apple-card p-5 flex flex-col justify-between space-y-4">
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[12px] font-mono text-[var(--ink-2)] flex items-center gap-1">
-                      <GitBranch className="w-3.5 h-3.5 text-[var(--blue)]" />
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-hairline">
+                    <span className="text-[11px] font-mono text-ink-secondary flex items-center gap-1">
+                      <GitBranch className="w-3.5 h-3.5 text-accent" />
                       {sib.id}
                     </span>
 
                     {sib.masterUpdated ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-pill bg-status-transferable-bg text-status-transferable-text border border-warning/30">
                         <AlertCircle className="w-3 h-3" />
                         Master Updated
                       </span>
                     ) : (
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#34c759]/10 text-[#34c759]">
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-pill bg-status-supported-bg text-status-supported-text">
                         In Sync
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-[18px] font-semibold text-[var(--ink)] mb-0.5">
+                  <h3 className="text-[16px] font-semibold text-ink leading-snug">
                     {sib.role}
                   </h3>
-                  <p className="text-[14px] text-[var(--ink-2)] font-medium mb-4">
+                  <p className="text-[13px] text-ink-secondary mb-3">
                     {sib.company}
                   </p>
 
-                  <div className="p-3 rounded-xl bg-[var(--bg-alt)] border border-[var(--line-light)] space-y-1.5 text-[12px] text-[var(--ink-2)] mb-4">
+                  <div className="p-3 rounded-xl bg-surface border border-hairline space-y-1.5 text-[12px] text-ink-secondary">
                     <div className="flex justify-between">
-                      <span>Fit Rubric Score:</span>
-                      <strong className="text-[var(--ink)]">{sib.fitScore}%</strong>
+                      <span>Fit Rubric:</span>
+                      <strong className="text-ink">{sib.fitScore ? `${sib.fitScore}%` : "Verified"}</strong>
                     </div>
                     <div className="flex justify-between">
-                      <span>Tailored Content Slots:</span>
-                      <span className="font-mono text-[var(--ink)]">{sib.tailoredBulletsCount} modified</span>
+                      <span>Modified Slots:</span>
+                      <span className="font-mono text-ink">{sib.tailoredBulletsCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Last Compiled:</span>
+                      <span>Compiled:</span>
                       <span>{sib.date}</span>
                     </div>
                   </div>
-
-                  {sib.masterUpdated && (
-                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-800 dark:text-amber-300 mb-4">
-                      Master resume gained new achievements. Review proposed updates without overwriting this version.
-                    </div>
-                  )}
                 </div>
 
-                <div className="pt-4 border-t border-[var(--line-light)] flex items-center justify-between text-[12px]">
+                <div className="pt-3 border-t border-hairline flex items-center justify-between text-[12px]">
                   {sib.masterUpdated ? (
                     <button
+                      type="button"
                       onClick={() => handleSync(sib.id)}
-                      className="pill-btn px-3 py-1 bg-[var(--blue)] text-white text-[12px] flex items-center gap-1"
+                      className="pill-btn pill-btn-primary px-3 py-1 text-[12px] gap-1"
                     >
                       <RefreshCw className="w-3 h-3" />
-                      Review Master Diff
+                      <span>Review Diff</span>
                     </button>
                   ) : (
                     <Link
-                      href="/export"
-                      className="text-[var(--link)] hover:underline flex items-center gap-1 font-medium"
+                      href="/workspace"
+                      className="text-link text-[12px] font-medium"
                     >
-                      Download Sibling &rarr;
+                      Open in Workspace →
                     </Link>
                   )}
 
                   <button
+                    type="button"
                     onClick={() => handleDelete(sib.id)}
-                    className="text-[11px] text-red-500 hover:underline"
+                    className="text-[11px] text-danger hover:underline cursor-pointer"
                   >
                     Delete
                   </button>

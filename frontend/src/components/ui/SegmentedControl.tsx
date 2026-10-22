@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { motion } from "framer-motion";
 
 interface Option {
@@ -14,6 +14,7 @@ interface SegmentedControlProps {
   value: string;
   onChange: (id: string) => void;
   className?: string;
+  name?: string;
 }
 
 export function SegmentedControl({
@@ -21,10 +22,14 @@ export function SegmentedControl({
   value,
   onChange,
   className = "",
+  name,
 }: SegmentedControlProps) {
+  const generatedId = useId();
+  const layoutId = name ? `seg-${name}` : `seg-${generatedId}`;
+
   return (
     <div
-      className={`inline-flex p-1 bg-[var(--bg-alt)] rounded-full border border-[var(--line-light)] max-w-full overflow-x-auto ${className}`}
+      className={`inline-flex p-1 bg-surface rounded-pill border border-hairline max-w-full overflow-x-auto ${className}`}
       role="tablist"
     >
       {options.map((option) => {
@@ -32,27 +37,28 @@ export function SegmentedControl({
         return (
           <button
             key={option.id}
+            type="button"
             role="tab"
             aria-selected={isSelected}
             onClick={() => onChange(option.id)}
-            className={`relative px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors whitespace-nowrap z-10 flex items-center gap-1.5 ${
-              isSelected ? "text-[var(--ink)]" : "text-[var(--ink-2)] hover:text-[var(--ink)]"
+            className={`relative px-3.5 py-1.5 rounded-pill text-[13px] font-medium transition-colors duration-150 whitespace-nowrap z-10 flex items-center justify-center gap-1.5 cursor-pointer select-none ${
+              isSelected ? "text-ink font-semibold" : "text-ink-secondary hover:text-ink"
             }`}
           >
             {isSelected && (
               <motion.div
-                layoutId="segmentedIndicator"
-                className="absolute inset-0 bg-[var(--bg)] rounded-full shadow-sm border border-[var(--line-light)] -z-10"
-                transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                layoutId={layoutId}
+                className="absolute inset-0 bg-canvas rounded-pill shadow-subtle border border-hairline -z-10"
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
               />
             )}
             <span>{option.label}</span>
             {option.badge && (
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                className={`text-[10px] px-1.5 py-0.5 rounded-pill font-semibold ${
                   isSelected
-                    ? "bg-[var(--blue)] text-white"
-                    : "bg-[var(--bg)] text-[var(--ink-2)] border border-[var(--line-light)]"
+                    ? "bg-accent text-white"
+                    : "bg-surface text-ink-secondary border border-hairline"
                 }`}
               >
                 {option.badge}
