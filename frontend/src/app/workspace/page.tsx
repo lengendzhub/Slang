@@ -20,12 +20,7 @@ import {
   UserSessionState,
 } from "@/lib/store";
 import { getApiBaseUrl } from "@/lib/apiConfig";
-import {
-  SAMPLE_MASTER_LATEX,
-  SAMPLE_TARGET_JD,
-  SAMPLE_DIFFS,
-  SAMPLE_REQUIREMENTS,
-} from "@/lib/sample-data";
+
 
 export default function WorkspacePage() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -252,8 +247,7 @@ export default function WorkspacePage() {
       if (!activeResumeId) {
         activeResumeId = `local_resume_${Date.now()}`;
         if (!returnedLatex) {
-          returnedLatex = SAMPLE_MASTER_LATEX;
-          setRawLatex(returnedLatex);
+          throw new Error("No master resume text found. Please upload a valid .tex or .pdf resume file.");
         }
       }
 
@@ -402,17 +396,6 @@ export default function WorkspacePage() {
             finalDiffs = extracted;
           }
         }
-        
-        if (finalDiffs.length === 0) {
-          finalDiffs = SAMPLE_DIFFS;
-          if (finalReqs.length === 0) {
-            finalReqs = SAMPLE_REQUIREMENTS;
-          }
-        }
-      }
-
-      if (finalReqs.length === 0) {
-        finalReqs = SAMPLE_REQUIREMENTS;
       }
 
       setDiffs(finalDiffs);

@@ -29,6 +29,8 @@ interface TailoredResumeRecord {
 export default function MyLibraryPage() {
   const [activeTab, setActiveTab] = useState<"resumes" | "facts">("resumes");
   const [candidateName, setCandidateName] = useState("Candidate");
+  const [templateName, setTemplateName] = useState("");
+  const [hasMaster, setHasMaster] = useState(false);
   const [resumes, setResumes] = useState<TailoredResumeRecord[]>([]);
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>([]);
   const [newFactText, setNewFactText] = useState("");
@@ -42,6 +44,9 @@ export default function MyLibraryPage() {
       setCandidateName("Candidate");
     }
 
+    setHasMaster(Boolean(session.rawResumeText && session.rawResumeText.trim()));
+    setTemplateName(session.uploadedFileName || session.detectedTemplate || (session.rawResumeText ? "Master LaTeX Document" : "No Master Uploaded"));
+
     if (session.evidenceBank && session.evidenceBank.length > 0) {
       setEvidenceList(session.evidenceBank);
     } else {
@@ -53,7 +58,7 @@ export default function MyLibraryPage() {
       jobTitle: s.role || "Tailored Resume",
       company: s.company || "Target Company",
       date: s.date || "Recently",
-      matchedCount: `${s.fitScore || 90}% fit rubric`,
+      matchedCount: s.fitScore ? `${s.fitScore}% fit rubric` : "Verified export",
       status: "Approved & Exported",
     }));
     setResumes(tailored);
@@ -242,10 +247,12 @@ export default function MyLibraryPage() {
                 </div>
                 <div>
                   <h3 className="text-[16px] font-semibold text-ink">
-                    Master LaTeX Template: jakes_resume.tex
+                    {hasMaster ? `Master Template: ${templateName}` : "No Master Resume Uploaded"}
                   </h3>
                   <p className="text-[12px] text-ink-muted">
-                    Formatting locked • Single-page geometry • {evidenceList.length} verified facts extracted
+                    {hasMaster
+                      ? `Formatting locked • Single-page geometry • ${evidenceList.length} verified facts extracted`
+                      : "Upload your master .tex or .pdf resume in Workspace to lock your layout and extract facts."}
                   </p>
                 </div>
               </div>
@@ -254,7 +261,7 @@ export default function MyLibraryPage() {
                 href="/workspace"
                 className="px-4 py-2 rounded-pill bg-surface border border-hairline text-ink text-[13px] font-medium hover:bg-canvas transition-colors self-start sm:self-auto"
               >
-                Replace Master .tex
+                {hasMaster ? "Replace Master .tex" : "Upload Master .tex"}
               </Link>
             </div>
 

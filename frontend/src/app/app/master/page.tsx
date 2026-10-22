@@ -256,12 +256,12 @@ export default function MasterResumePage() {
               <div className="grid grid-cols-2 gap-3 text-[12px]">
                 <div className="p-3 bg-canvas border border-hairline rounded-xl">
                   <span className="text-ink-muted block text-[11px]">Detected Template</span>
-                  <strong className="text-ink font-semibold mt-0.5 block">{session?.detectedTemplate || "Jake's Resume"}</strong>
+                  <strong className="text-ink font-semibold mt-0.5 block">{session?.detectedTemplate || "Standard LaTeX"}</strong>
                 </div>
                 <div className="p-3 bg-canvas border border-hairline rounded-xl">
                   <span className="text-ink-muted block text-[11px]">Parse Confidence</span>
                   <strong className="text-status-supported-text font-semibold mt-0.5 block">
-                    {Math.round((session?.parseConfidence || 0.95) * 100)}% (High)
+                    {session?.parseConfidence !== undefined ? `${Math.round(session.parseConfidence * 100)}%` : "Verified"}
                   </strong>
                 </div>
               </div>

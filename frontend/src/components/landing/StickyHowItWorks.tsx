@@ -152,7 +152,7 @@ const steps = [
           </div>
           <div className="flex items-center gap-2 text-[#34c759]">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Contact details intact: alex.morgan@email.com, 415-555-0198</span>
+            <span>Contact details intact: Email, Phone & Hyperlinks preserved</span>
           </div>
         </div>
       ),

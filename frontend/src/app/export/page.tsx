@@ -102,7 +102,7 @@ export default function ExportPage() {
       role: targetRole,
       company: session.targetCompany || "Target Employer",
       date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      fitScore: session.fitScore || 90,
+      fitScore: session.fitScore ?? 0,
       masterUpdated: false,
       tailoredBulletsCount: acceptedDiffs.length,
     };
@@ -183,7 +183,9 @@ export default function ExportPage() {
 
                 <div className="mt-4 pt-3 border-t border-[var(--line-light)] text-[11px] text-[var(--ink-2)] flex items-center justify-between">
                   <span>Evaluator: PyMuPDF 1.28 (fitz)</span>
-                  <span className="font-semibold text-[#34c759]">ATS Score: 98/100</span>
+                  <span className="font-semibold text-[#34c759]">
+                    {session?.fitScore ? `Fit Score: ${session.fitScore}%` : "ATS Single-Page Verified"}
+                  </span>
                 </div>
               </div>
 

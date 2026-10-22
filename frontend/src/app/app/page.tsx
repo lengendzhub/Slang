@@ -102,8 +102,8 @@ export default function AppDashboardPage() {
                       </span>
                     </div>
                     <p className="text-[13px] text-ink-muted">
-                      Template: <strong className="text-ink font-medium">{session?.detectedTemplate || "Jake's Resume"}</strong> •{" "}
-                      Parse Confidence: <strong className="text-status-supported-text font-medium">{Math.round((session?.parseConfidence || 0.95) * 100)}%</strong> •{" "}
+                      Template: <strong className="text-ink font-medium">{session?.detectedTemplate || "Standard LaTeX"}</strong> •{" "}
+                      Parse Confidence: <strong className="text-status-supported-text font-medium">{session?.parseConfidence !== undefined ? `${Math.round(session.parseConfidence * 100)}%` : "Verified"}</strong> •{" "}
                       Evidence Bank: <strong className="text-ink font-medium">{evidenceCount} facts</strong>
                     </p>
                   </div>
