@@ -132,7 +132,7 @@ export function FrostedNav() {
               <img src="/icon.svg" alt="Slang logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-semibold text-[17px] tracking-tight text-ink group-hover:text-accent transition-colors">
-              Slang
+              Slang Type
             </span>
           </Link>
         </div>
