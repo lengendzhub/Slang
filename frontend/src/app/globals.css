@@ -11,27 +11,25 @@
 
 @layer base {
   :root {
-    /* Apple Design Language (Light Mode) */
+    /* Apple Editorial Light Mode */
     --bg: #ffffff;
     --bg-alt: #f5f5f7;
-    --card: #ffffff;
     --ink: #1d1d1f;
-    --ink-2: #86868b;
+    --ink-2: #6e6e73;
     --blue: #0071e3;
     --blue-hover: #0077ed;
-    --line: rgba(0, 0, 0, 0.1);
-    --line-light: rgba(0, 0, 0, 0.06);
-    --input-border: #d2d2d7;
+    --line: #d2d2d7;
+    --line-light: #d2d2d7;
 
-    /* Semantic Status Tokens (Apple System Palette) */
-    --status-supported-text: #34c759;
-    --status-supported-bg: rgba(52, 199, 89, 0.12);
-    --status-transferable-text: #ff9500;
-    --status-transferable-bg: rgba(255, 149, 0, 0.12);
-    --status-missing-text: #ff3b30;
-    --status-missing-bg: rgba(255, 59, 48, 0.12);
+    /* Semantic Status Tokens (High-contrast text on muted fills) */
+    --status-supported-text: #1d7d34;
+    --status-supported-bg: #eafbe7;
+    --status-transferable-text: #b25000;
+    --status-transferable-bg: #fff5eb;
+    --status-missing-text: #d70015;
+    --status-missing-bg: #ffefee;
 
-    --background: var(--bg-alt);
+    --background: var(--bg);
     --foreground: var(--ink);
 
     /* Fluid Responsive Tokens (Apple Standards) */
@@ -51,25 +49,22 @@
   }
 
   .dark {
-    /* Apple Design Language (Dark Mode) */
+    /* Apple Editorial Dark Mode */
     --bg: #000000;
-    --bg-alt: #000000;
-    --card: #1c1c1e;
+    --bg-alt: #1c1c1e;
     --ink: #f5f5f7;
-    --ink-2: #86868b;
-    --blue: #0071e3;
-    --blue-hover: #2997ff;
-    --line: rgba(255, 255, 255, 0.1);
-    --line-light: rgba(255, 255, 255, 0.06);
-    --input-border: #3a3a3c;
-    --input-bg-dark: #2c2c2e;
+    --ink-2: #98989d;
+    --blue: #2997ff;
+    --blue-hover: #40a2ff;
+    --line: #38383a;
+    --line-light: #38383a;
 
     --status-supported-text: #30d158;
-    --status-supported-bg: rgba(48, 209, 88, 0.16);
+    --status-supported-bg: rgba(48, 209, 88, 0.14);
     --status-transferable-text: #ff9f0a;
-    --status-transferable-bg: rgba(255, 159, 10, 0.16);
+    --status-transferable-bg: rgba(255, 159, 10, 0.14);
     --status-missing-text: #ff453a;
-    --status-missing-bg: rgba(255, 69, 58, 0.16);
+    --status-missing-bg: rgba(255, 69, 58, 0.14);
 
     --background: var(--bg);
     --foreground: var(--ink);
@@ -84,18 +79,10 @@
   body {
     background-color: var(--bg-alt);
     color: var(--ink);
-    font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, var(--font-inter), "Inter",
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
       "Helvetica Neue", Arial, sans-serif;
-    font-size: 17px;
-    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, var(--font-inter), "Inter",
-      "Helvetica Neue", Arial, sans-serif;
-    letter-spacing: -0.5px;
   }
 
   /* Prevent iOS Safari 16px auto-zoom on input focus */
@@ -231,48 +218,10 @@ nextjs-portal {
 
 /* Apple Design System Utility Classes */
 .apple-card {
-  background-color: var(--card, #ffffff);
+  background-color: var(--bg);
   border: 1px solid var(--line-light);
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.apple-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.dark .apple-card {
-  background-color: var(--card, #1c1c1e);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-}
-
-/* Typing cursor animation */
-@keyframes appleCursorBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.animate-typing-cursor {
-  animation: appleCursorBlink 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Page elements fade-in */
-@keyframes appleFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-apple-fade {
-  animation: appleFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  border-radius: var(--fluid-card-radius, 20px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
 }
 
 .pill-btn {
