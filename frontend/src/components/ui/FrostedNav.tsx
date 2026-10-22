@@ -112,9 +112,7 @@ export function FrostedNav() {
   return (
     <>
       <header
-        className={`sticky top-0 z-40 h-12 md:h-[48px] frosted-glass px-4 sm:px-6 flex items-center justify-between transition-all duration-200 ${
-          scrolled ? "border-b border-hairline shadow-subtle" : "border-b border-transparent"
-        }`}
+        className={`sticky top-0 z-40 h-[48px] px-4 sm:px-6 flex items-center justify-between transition-all duration-200 backdrop-blur-[20px] bg-[rgba(255,255,255,0.72)] dark:bg-[rgba(0,0,0,0.72)] border-b border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]`}
       >
         {/* Brand Wordmark & Mobile Menu Trigger */}
         <div className="flex items-center gap-3">
@@ -140,7 +138,7 @@ export function FrostedNav() {
         </div>
 
         {/* Desktop Navigation Links (md and up) */}
-        <nav className="hidden md:flex items-center gap-8 text-[13px] font-normal text-ink-muted">
+        <nav className="hidden md:flex items-center gap-7 text-[14px] font-normal text-ink-muted">
           <Link
             href="/workspace"
             className={`hover:text-ink transition-colors duration-fast ease-apple ${
@@ -148,6 +146,17 @@ export function FrostedNav() {
             }`}
           >
             The Workspace
+          </Link>
+          <Link
+            href="/type"
+            className={`inline-flex items-center gap-1.5 hover:text-ink transition-colors duration-fast ease-apple ${
+              pathname === "/type" ? "text-ink font-medium" : ""
+            }`}
+          >
+            <span>Slang Type</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#0071E3]/20">
+              Live
+            </span>
           </Link>
           <Link
             href="/library"
@@ -167,7 +176,7 @@ export function FrostedNav() {
           </Link>
         </nav>
 
-        {/* Actions: Theme Toggle + Blue Pill CTA */}
+        {/* Actions: Theme Toggle + Auth Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
@@ -181,7 +190,7 @@ export function FrostedNav() {
           {user ? (
             <Link
               href="/account"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-surface border border-hairline text-[12px] font-medium text-ink hover:bg-canvas transition-colors shadow-subtle min-h-[34px]"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-hairline text-[12px] font-medium text-ink hover:bg-canvas transition-colors shadow-subtle min-h-[34px]"
             >
               <div className="w-5 h-5 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">
                 {user.name ? user.name[0].toUpperCase() : "U"}
@@ -189,20 +198,28 @@ export function FrostedNav() {
               <span className="truncate max-w-[90px]">{user.name.split(" ")[0]}</span>
             </Link>
           ) : (
-            <Link
-              href="/signin"
-              className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-pill text-[13px] font-medium text-ink hover:text-accent transition-colors min-h-[36px]"
-            >
-              Sign In
-            </Link>
+            <div className="hidden sm:flex items-center gap-2">
+              <Link
+                href="/signin"
+                className="text-[13px] text-ink-muted hover:text-ink transition-colors px-2.5 py-1.5 rounded-full"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-[#0071E3] text-white text-[13px] font-medium hover:bg-[#0077ED] transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+              >
+                Sign Up
+              </Link>
+            </div>
           )}
 
           <Link
             href="/workspace"
             onClick={handleTailorClick}
-            className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-pill bg-accent text-white text-[13px] font-medium hover:bg-accent-hover shadow-subtle min-h-[36px] transition-all duration-fast ease-apple active:scale-[0.98]"
+            className="hidden sm:inline-flex items-center px-3.5 py-1.5 rounded-full bg-surface border border-hairline text-ink text-[12px] font-medium hover:bg-surface-raised min-h-[34px] transition-all duration-fast ease-apple active:scale-[0.98]"
           >
-            Tailor Your Resume
+            Tailor Resume
           </Link>
         </div>
       </header>
@@ -253,6 +270,19 @@ export function FrostedNav() {
                   className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
                 >
                   <span>The Workspace</span>
+                  <ArrowRight className="w-5 h-5 text-ink-muted" />
+                </Link>
+                <Link
+                  href="/type"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2.5 text-[22px] font-semibold text-ink hover:text-accent transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    Slang Type
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#0071E3]/20">
+                      Live
+                    </span>
+                  </span>
                   <ArrowRight className="w-5 h-5 text-ink-muted" />
                 </Link>
                 <Link

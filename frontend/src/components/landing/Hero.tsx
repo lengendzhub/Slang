@@ -134,6 +134,13 @@ export function Hero() {
             <span>Get started</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
+          <Link
+            href="/type"
+            className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-pill border border-hairline bg-surface text-ink text-[17px] font-medium hover:bg-surface-raised shadow-subtle inline-flex items-center justify-center gap-2 transition-all duration-fast ease-apple active:scale-[0.98]"
+          >
+            <Sparkles className="w-4 h-4 text-[#0071E3]" />
+            <span>Slang Type</span>
+          </Link>
           <a
             href="#how-it-works"
             className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-pill text-[17px] font-medium text-accent hover:opacity-80 inline-flex items-center justify-center gap-1 transition-all"
